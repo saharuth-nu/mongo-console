@@ -14,9 +14,14 @@ RUN npm ci
 
 COPY . .
 
-# Build-time env — ไม่ใส่ credentials จริง ใช้ placeholder เพื่อให้ build ผ่าน
+# Build-time env
 ENV MONGODB_URI=mongodb://placeholder:27017
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# basePath — set via --build-arg BASE_PATH=/db-console
+# NEXT_PUBLIC_* vars must be present at build time (they are inlined by Next.js)
+ARG BASE_PATH=""
+ENV NEXT_PUBLIC_BASE_PATH=$BASE_PATH
 
 RUN npm run build
 
