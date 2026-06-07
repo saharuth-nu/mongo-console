@@ -154,8 +154,6 @@ export default function ConnectPage() {
       setEnvServers(d.envServers ?? [])
       setConnectedServers(d.connectedServers ?? [])
       setActiveServerId(d.activeServerId ?? null)
-      // If already connected — go to dashboard
-      if (d.connected) setTimeout(() => router.push('/'), 600)
       // No env — show manual form automatically
       if (!d.hasEnv) setShowManual(true)
     })
@@ -250,6 +248,36 @@ export default function ConnectPage() {
             SELECT CONNECTION
           </p>
         </div>
+
+        {/* ── Active connection banner ─────────────────────────────────────── */}
+        {activeServerId && (
+          <div style={{
+            marginBottom: 12, padding: '10px 14px',
+            background: 'rgba(0,255,65,.05)',
+            border: '1px solid var(--border-mid)',
+            borderRadius: 'var(--radius)',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 6px var(--green)', flexShrink: 0 }} />
+            <div style={{ flex: 1, fontSize: '0.72rem' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>ACTIVE: </span>
+              <span style={{ color: 'var(--green)', fontWeight: 700 }}>
+                {(() => {
+                  if (activeServerId === '__manual__') return 'Manual Connection'
+                  const idx = parseInt(activeServerId.replace('env_', ''))
+                  return !isNaN(idx) && envServers[idx] ? envServers[idx].label : activeServerId
+                })()}
+              </span>
+            </div>
+            <button
+              className="btn btn-green"
+              style={{ padding: '4px 12px', fontSize: '0.7rem', flexShrink: 0 }}
+              onClick={() => router.push('/')}
+            >
+              ▶ DASHBOARD
+            </button>
+          </div>
+        )}
 
         {/* ── ENV servers ──────────────────────────────────────────────────── */}
         {hasEnv && envServers.length > 0 && (
