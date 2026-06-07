@@ -1,6 +1,6 @@
 services:
 
-  # ── MongoDB ──────────────────────────────────────────────────────────────────
+  # ── MongoDB (built-in — comment out if using external MongoDB) ───────────────
   mongo:
     image: mongo:7
     container_name: mongo
@@ -12,6 +12,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: adminpassword
     volumes:
       - mongo_data:/data/db
+    networks:
+      - mongo-net
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -31,13 +33,28 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Comma-separated list of MongoDB URIs (no credentials — enter via UI)
-      # Format: label|uri,label|uri   OR just   uri,uri
+      # Comma-separated URIs — format: label|uri,label|uri  OR just  uri,uri
+      # Examples:
+      #   Same compose:        Local|mongodb://mongo:27017/?authSource=admin
+      #   External network:    Prod|mongodb://mongo-prod:27017/?authSource=admin
+      #   Host port (Linux):   Local|mongodb://172.17.0.1:27017/?authSource=admin
+      #   Host port (Mac/Win): Local|mongodb://host.docker.internal:27017/?authSource=admin
+      #   Remote server:       Remote|mongodb://192.168.1.100:27017/?authSource=admin
+      #   Atlas:               Atlas|mongodb+srv://cluster.mongodb.net/?authSource=admin
       MONGODB_URI: >-
         Local|mongodb://mongo:27017/?authSource=admin
+    networks:
+      - mongo-net
     depends_on:
       mongo:
         condition: service_healthy
+
+networks:
+  mongo-net:
+    # Change to 'external: true' if MongoDB runs in a separate compose stack
+    # and you have created the network manually with: docker network create mongo-net
+    driver: bridge
+    # external: true
 
 volumes:
   mongo_data:
