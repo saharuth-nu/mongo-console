@@ -1,4 +1,5 @@
 'use client'
+import { apiUrl } from '@/lib/api'
 import { useEffect, useState } from 'react'
 import Terminal from './Terminal'
 import { useAppStore } from '@/lib/store'
@@ -43,7 +44,7 @@ export default function SlowView() {
   const [selected, setSelected] = useState<ProfileDoc | null>(null)
 
   useEffect(() => {
-    fetch('/api/databases').then(r => r.json()).then(d => {
+    fetch(apiUrl('/api/databases')).then(r => r.json()).then(d => {
       const names = (d.databases ?? []).map((x: { name: string }) => x.name)
       setDbs(names)
       if (names.length && !slowDb) setSlowDb(names[0])
@@ -52,7 +53,7 @@ export default function SlowView() {
 
   async function load() {
     if (!db) return
-    const res = await fetch(`/api/slow-queries?db=${db}`)
+    const res = await fetch(apiUrl(`/api/slow-queries?db=${db}`))
     const data = await res.json()
     if (data.error) { setError(data.error); return }
     setError(null)
@@ -64,7 +65,7 @@ export default function SlowView() {
 
   async function toggleProfiling() {
     const level = profilingOn ? 0 : 1
-    await fetch('/api/slow-queries', {
+    await fetch(apiUrl('/api/slow-queries'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ db, level }),

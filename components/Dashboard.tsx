@@ -1,4 +1,5 @@
 'use client'
+import { apiUrl } from '@/lib/api'
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Terminal from './Terminal'
@@ -44,7 +45,7 @@ export default function Dashboard() {
 
   const fetchMetrics = useCallback(async () => {
     try {
-      const res = await fetch('/api/metrics')
+      const res = await fetch(apiUrl('/api/metrics'))
       const data = await res.json()
       if (data.error) {
         const authErr = /auth|unauthorized|not authorized|requires authentication/i.test(data.error)

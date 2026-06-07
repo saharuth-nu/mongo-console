@@ -1,4 +1,5 @@
 'use client'
+import { apiUrl } from '@/lib/api'
 import { useEffect, useState } from 'react'
 import Terminal from './Terminal'
 import { useAppStore } from '@/lib/store'
@@ -64,12 +65,12 @@ export default function BrowserView() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    fetch('/api/databases').then(r => r.json()).then(d => {
+    fetch(apiUrl('/api/databases')).then(r => r.json()).then(d => {
       const list = d.databases ?? []
       setDbs(list)
       // restore previous collection if we have one
       if (browserDb && browserCol) {
-        fetch(`/api/collections/${browserDb}`).then(r => r.json()).then(cd => {
+        fetch(apiUrl(`/api/collections/${browserDb}`)).then(r => r.json()).then(cd => {
           setCollections(prev => ({ ...prev, [browserDb]: cd.collections ?? [] }))
         })
         loadDocs(browserDb, browserCol)
@@ -79,7 +80,7 @@ export default function BrowserView() {
 
   async function loadCollections(db: string) {
     if (collections[db]) { setExpandedDb(db === expandedDb ? null : db); return }
-    const res = await fetch(`/api/collections/${db}`)
+    const res = await fetch(apiUrl(`/api/collections/${db}`))
     const data = await res.json()
     setCollections(prev => ({ ...prev, [db]: data.collections ?? [] }))
     setExpandedDb(db)
@@ -92,7 +93,7 @@ export default function BrowserView() {
     setPage(p)
     setSelectedDoc(null)
     setSidebarOpen(false)
-    const res = await fetch(`/api/documents/${db}/${col}?page=${p}&limit=20`)
+    const res = await fetch(apiUrl(`/api/documents/${db}/${col}?page=${p}&limit=20`))
     const data = await res.json()
     setDocs((data.docs ?? []) as Record<string, unknown>[])
     setTotal(data.total ?? 0)

@@ -1,4 +1,5 @@
 'use client'
+import { apiUrl } from '@/lib/api'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -27,7 +28,7 @@ export default function Navbar() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/connect')
+    fetch(apiUrl('/api/connect'))
       .then(r => r.json())
       .then(d => {
         setConnected(d.connected)

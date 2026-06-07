@@ -1,4 +1,5 @@
 'use client'
+import { apiUrl } from '@/lib/api'
 import { useEffect, useRef, useState } from 'react'
 import Terminal from './Terminal'
 import dynamic from 'next/dynamic'
@@ -24,7 +25,7 @@ export default function QueryView() {
 
   // Load databases on mount
   useEffect(() => {
-    fetch('/api/databases').then(r => r.json()).then(d => {
+    fetch(apiUrl('/api/databases')).then(r => r.json()).then(d => {
       const names = (d.databases ?? []).map((x: { name: string }) => x.name)
       setDbs(names)
       if (names.length && !queryDb) setQueryDb(names[0])
@@ -35,7 +36,7 @@ export default function QueryView() {
   useEffect(() => {
     const db = queryDb
     if (!db) return
-    fetch(`/api/collections/${db}`).then(r => r.json()).then(d => {
+    fetch(apiUrl(`/api/collections/${db}`)).then(r => r.json()).then(d => {
       const names = (d.collections ?? []).map((x: { name: string }) => x.name)
       setCols(names)
       if (names.length && !queryCol) setQueryCol(names[0])
@@ -69,7 +70,7 @@ export default function QueryView() {
       const body = queryType === 'aggregate'
         ? { db: queryDb, collection: queryCol, queryType: 'aggregate', pipeline: parsed }
         : { db: queryDb, collection: queryCol, queryType: 'find', filter: parsed }
-      const res = await fetch('/api/query', {
+      const res = await fetch(apiUrl('/api/query'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

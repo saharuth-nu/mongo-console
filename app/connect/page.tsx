@@ -1,4 +1,5 @@
 'use client'
+import { apiUrl } from '@/lib/api'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Terminal from '@/components/Terminal'
@@ -148,7 +149,7 @@ export default function ConnectPage() {
 
   // ── Fetch server state on mount ───────────────────────────────────────────
   useEffect(() => {
-    fetch('/api/connect').then(r => r.json()).then(d => {
+    fetch(apiUrl('/api/connect')).then(r => r.json()).then(d => {
       setHasEnv(d.hasEnv ?? false)
       setEnvServers(d.envServers ?? [])
       setConnectedServers(d.connectedServers ?? [])
@@ -165,7 +166,7 @@ export default function ConnectPage() {
     const sid = `env_${idx}`
     setLoading(sid)
     setError(null)
-    const res = await fetch('/api/connect', {
+    const res = await fetch(apiUrl('/api/connect'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ envIndex: idx, username, password }),
@@ -185,7 +186,7 @@ export default function ConnectPage() {
   async function switchServer(sid: string) {
     setLoading(sid)
     setError(null)
-    const res = await fetch('/api/connect', {
+    const res = await fetch(apiUrl('/api/connect'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ serverId: sid }),
@@ -206,7 +207,7 @@ export default function ConnectPage() {
   async function connectManual() {
     setLoading('__manual__')
     setError(null)
-    const res = await fetch('/api/connect', {
+    const res = await fetch(apiUrl('/api/connect'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
