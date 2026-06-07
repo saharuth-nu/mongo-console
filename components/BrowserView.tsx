@@ -3,6 +3,7 @@ import { apiUrl } from '@/lib/api'
 import { useEffect, useState } from 'react'
 import Terminal from './Terminal'
 import { useAppStore } from '@/lib/store'
+import { ChevronRight, ChevronDown, Circle, Database, X } from 'lucide-react'
 
 interface DbInfo { name: string; sizeOnDisk: number }
 interface ColInfo { name: string; count: number; size: number }
@@ -105,8 +106,8 @@ export default function BrowserView() {
     <div className="overflow-y-auto h-full" style={{ background: 'var(--bg-panel)' }}>
       <div className="px-3 py-2 text-xs font-bold tracking-widest uppercase flex items-center justify-between"
         style={{ color: 'var(--green)', borderBottom: '1px solid var(--border)' }}>
-        <span>◈ DATABASES</span>
-        <button className="md:hidden btn-red py-0.5 px-2 text-xs" onClick={() => setSidebarOpen(false)}>✕</button>
+        <span className="flex items-center gap-1.5"><Database size={12} strokeWidth={2} /> DATABASES</span>
+        <button className="md:hidden btn-red py-0.5 px-2" onClick={() => setSidebarOpen(false)}><X size={13} strokeWidth={2} /></button>
       </div>
       {dbs.length === 0 && (
         <p className="px-3 py-4 text-xs" style={{ color: 'var(--text-dim)' }}>// no databases found</p>
@@ -122,7 +123,9 @@ export default function BrowserView() {
             }}
             onClick={() => loadCollections(db.name)}
           >
-            <span>{expandedDb === db.name ? '▼' : '▶'}</span>
+            {expandedDb === db.name
+              ? <ChevronDown size={13} strokeWidth={2} style={{ flexShrink: 0 }} />
+              : <ChevronRight size={13} strokeWidth={2} style={{ flexShrink: 0 }} />}
             <span className="font-medium truncate">{db.name}</span>
           </div>
           {expandedDb === db.name && collections[db.name]?.map(col => (
@@ -135,7 +138,7 @@ export default function BrowserView() {
               }}
               onClick={() => loadDocs(db.name, col.name)}
             >
-              <span>◎</span>
+              <Circle size={7} strokeWidth={2} style={{ flexShrink: 0 }} />
               <span className="truncate flex-1">{col.name}</span>
               <span className="flex-shrink-0" style={{ color: 'var(--text-dim)' }}>{col.count}</span>
             </div>
@@ -186,7 +189,7 @@ export default function BrowserView() {
             {/* Toolbar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
               {/* Mobile: open sidebar button */}
-              <button className="btn btn-green md:hidden" style={{ padding: '4px 10px', fontSize: '0.7rem' }} onClick={() => setSidebarOpen(true)}>◈</button>
+              <button className="btn btn-green md:hidden" style={{ padding: '4px 8px' }} onClick={() => setSidebarOpen(true)}><Database size={14} strokeWidth={1.75} /></button>
               {/* Breadcrumb */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden', flex: 1, minWidth: 0 }}>
                 <span className="glow-green font-bold truncate" style={{ fontSize: '0.85rem' }}>{selectedCol.db}</span>

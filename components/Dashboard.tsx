@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Terminal from './Terminal'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { Network, MemoryStick, Zap, Clock, AlertCircle } from 'lucide-react'
 
 interface MetricPoint { time: string; ops: number; connections: number; mem: number }
 
@@ -76,15 +77,15 @@ export default function Dashboard() {
 
   if (error) return (
     <div className="flex-1 flex items-center justify-center flex-col gap-5 p-8 text-center">
-      <div style={{ fontSize: '3rem', color: 'var(--red)', opacity: .3 }}>⬡</div>
+      <AlertCircle size={56} style={{ color: 'var(--red)', opacity: .4 }} strokeWidth={1} />
       <span className="glow-red text-xl md:text-2xl font-bold tracking-wider">CONNECTION ERROR</span>
       <p className="text-sm max-w-sm" style={{ color: 'var(--text-secondary)' }}>{error}</p>
       {isAuthError ? (
         <button className="btn btn-green mt-2" onClick={() => router.push('/connect')}>
-          🔐 Enter Credentials
+          Enter Credentials
         </button>
       ) : (
-        <a href="/connect" className="btn btn-green mt-2">⚙ Configure Connection</a>
+        <a href="/connect" className="btn btn-green mt-2">Configure Connection</a>
       )}
     </div>
   )
@@ -94,28 +95,28 @@ export default function Dashboard() {
       label: 'CONNECTIONS',
       value: ss?.connections?.current ?? '—',
       sub: `${ss?.connections?.available ?? '—'} available`,
-      icon: '⬡',
+      Icon: Network,
       accent: 'var(--green)',
     },
     {
       label: 'RESIDENT MEM',
       value: ss?.mem?.resident ? fmtBytes(Number(ss.mem.resident) * 1024 * 1024) : '—',
       sub: `virt ${ss?.mem?.virtual ? fmtBytes(Number(ss.mem.virtual) * 1024 * 1024) : '—'}`,
-      icon: '◈',
+      Icon: MemoryStick,
       accent: 'var(--cyan)',
     },
     {
       label: 'TOTAL OPS',
       value: ss?.opcounters ? fmt(Object.values(ss.opcounters).reduce((a, b) => a + b, 0)) : '—',
       sub: 'cumulative since start',
-      icon: '▶',
+      Icon: Zap,
       accent: 'var(--green)',
     },
     {
       label: 'UPTIME',
       value: ss?.uptimeEstimate ? `${Math.floor(Number(ss.uptimeEstimate) / 3600)}h` : '—',
       sub: `${Math.floor((Number(ss?.uptimeEstimate) ?? 0) / 60) % 60}m remaining`,
-      icon: '◉',
+      Icon: Clock,
       accent: 'var(--yellow)',
     },
   ]
@@ -135,13 +136,7 @@ export default function Dashboard() {
           <div key={c.label} className="metric-card">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs tracking-widest" style={{ color: 'var(--text-secondary)' }}>{c.label}</span>
-              <span style={{
-                color: c.accent,
-                fontSize: '1.1rem',
-                opacity: 1,
-                textShadow: `0 0 10px ${c.accent}`,
-                lineHeight: 1,
-              }}>{c.icon}</span>
+              <c.Icon size={18} strokeWidth={1.5} style={{ color: c.accent, filter: `drop-shadow(0 0 6px ${c.accent})` }} />
             </div>
             <div className="metric-value">{String(c.value)}</div>
             <div className="mt-1 text-xs truncate" style={{ color: 'var(--text-dim)' }}>{c.sub}</div>

@@ -3,12 +3,13 @@ import { apiUrl } from '@/lib/api'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { LayoutDashboard, Database, Terminal, AlertTriangle, Settings, Menu, X } from 'lucide-react'
 
 const NAV = [
-  { href: '/',        label: 'DASHBOARD',   icon: '◈' },
-  { href: '/browser', label: 'DB BROWSER',  icon: '◉' },
-  { href: '/query',   label: 'QUERY EXEC',  icon: '▶' },
-  { href: '/slow',    label: 'SLOW QUERIES',icon: '⚠' },
+  { href: '/',        label: 'DASHBOARD',    Icon: LayoutDashboard },
+  { href: '/browser', label: 'DB BROWSER',   Icon: Database },
+  { href: '/query',   label: 'QUERY EXEC',   Icon: Terminal },
+  { href: '/slow',    label: 'SLOW QUERIES', Icon: AlertTriangle },
 ]
 
 interface EnvServer { label: string; baseUri: string }
@@ -64,11 +65,11 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-0.5 flex-1 mx-3">
-          {NAV.map(n => (
-            <Link key={n.href} href={n.href}
-              className={`nav-link px-3 py-1.5 text-xs border-l-0 ${path === n.href ? 'active' : ''}`}>
-              <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>{n.icon}</span>
-              [{n.label}]
+          {NAV.map(({ href, label, Icon }) => (
+            <Link key={href} href={href}
+              className={`nav-link px-3 py-1.5 text-xs border-l-0 ${path === href ? 'active' : ''}`}>
+              <Icon size={13} strokeWidth={1.75} />
+              [{label}]
             </Link>
           ))}
         </div>
@@ -106,12 +107,14 @@ export default function Navbar() {
           <span className="hidden lg:inline text-xs" style={{ color: 'var(--text-dim)' }}>{time}</span>
 
           {/* Connection manager */}
-          <Link href="/connect" className="btn-green text-xs py-1 px-2" title="Connection Manager">⚙</Link>
+          <Link href="/connect" className="btn-green py-1 px-2" title="Connection Manager">
+            <Settings size={14} strokeWidth={1.75} />
+          </Link>
 
           {/* Hamburger */}
-          <button className="md:hidden btn-green py-1 px-2 text-xs"
+          <button className="md:hidden btn-green py-1 px-2"
             onClick={() => setMenuOpen(o => !o)} aria-label="Toggle menu">
-            {menuOpen ? '✕' : '☰'}
+            {menuOpen ? <X size={15} strokeWidth={2} /> : <Menu size={15} strokeWidth={2} />}
           </button>
         </div>
       </div>
@@ -119,12 +122,12 @@ export default function Navbar() {
       {/* Mobile dropdown */}
       {menuOpen && (
         <div className="md:hidden" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
-          {NAV.map(n => (
-            <Link key={n.href} href={n.href}
-              className={`nav-link text-sm py-3 px-4 border-l-0 border-b flex items-center gap-2 ${path === n.href ? 'active' : ''}`}
+          {NAV.map(({ href, label, Icon }) => (
+            <Link key={href} href={href}
+              className={`nav-link text-sm py-3 px-4 border-l-0 border-b flex items-center gap-2 ${path === href ? 'active' : ''}`}
               style={{ borderBottomColor: 'var(--border)' }}>
-              <span style={{ color: 'var(--green)', fontSize: '1.1rem', lineHeight: 1 }}>{n.icon}</span>
-              <span className="tracking-widest">[{n.label}]</span>
+              <Icon size={16} strokeWidth={1.75} style={{ color: 'var(--green)', flexShrink: 0 }} />
+              <span className="tracking-widest">[{label}]</span>
             </Link>
           ))}
           <div className="px-4 py-2 text-xs flex items-center gap-2" style={{ color: 'var(--text-dim)' }}>

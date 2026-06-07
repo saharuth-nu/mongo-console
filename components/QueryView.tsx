@@ -5,6 +5,7 @@ import Terminal from './Terminal'
 import dynamic from 'next/dynamic'
 import { useAppStore } from '@/lib/store'
 import Select from './Select'
+import { Play, Copy, Check, Pencil, Trash2, ChevronDown, ChevronRight, X, Save } from 'lucide-react'
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
 
@@ -152,19 +153,19 @@ function DocCard({
         {/* Actions */}
         <div style={{ display: 'flex', gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
           <button title="Copy JSON" onClick={copyDoc}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: copied ? 'var(--green)' : 'var(--text-dim)', padding: '2px 5px' }}>
-            {copied ? '✓' : '⎘'}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: copied ? 'var(--green)' : 'var(--text-dim)', padding: '3px 5px', display: 'flex' }}>
+            {copied ? <Check size={13} strokeWidth={2.5} /> : <Copy size={13} strokeWidth={1.75} />}
           </button>
           <button title="Edit" onClick={startEdit}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: mode === 'edit' ? 'var(--cyan)' : 'var(--text-dim)', padding: '2px 5px' }}>
-            ✎
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: mode === 'edit' ? 'var(--cyan)' : 'var(--text-dim)', padding: '3px 5px', display: 'flex' }}>
+            <Pencil size={13} strokeWidth={1.75} />
           </button>
           <button title="Delete" onClick={() => setMode(m => m === 'confirm-delete' ? 'view' : 'confirm-delete')}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: mode === 'confirm-delete' ? 'var(--red)' : 'var(--text-dim)', padding: '2px 5px' }}>
-            ✕
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: mode === 'confirm-delete' ? 'var(--red)' : 'var(--text-dim)', padding: '3px 5px', display: 'flex' }}>
+            <Trash2 size={13} strokeWidth={1.75} />
           </button>
-          <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', padding: '2px 2px' }}>
-            {expanded ? '▲' : '▼'}
+          <span style={{ color: 'var(--text-dim)', padding: '3px 2px', display: 'flex' }}>
+            {expanded ? <ChevronDown size={13} strokeWidth={2} /> : <ChevronRight size={13} strokeWidth={2} />}
           </span>
         </div>
       </div>
@@ -198,11 +199,11 @@ function DocCard({
           />
           {actionError && <div style={{ color: 'var(--red)', fontSize: '0.7rem', marginTop: 4 }}>✗ {actionError}</div>}
           <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-            <button className="btn" style={{ fontSize: '0.7rem', padding: '5px 12px' }}
-              onClick={() => { setMode('view'); setActionError(null) }}>✕ CANCEL</button>
-            <button className="btn btn-cyan" style={{ flex: 1, justifyContent: 'center', fontSize: '0.7rem', padding: '5px' }}
+            <button className="btn" style={{ fontSize: '0.7rem', padding: '5px 12px', gap: 5 }}
+              onClick={() => { setMode('view'); setActionError(null) }}><X size={13} /> CANCEL</button>
+            <button className="btn btn-cyan" style={{ flex: 1, justifyContent: 'center', fontSize: '0.7rem', padding: '5px', gap: 5 }}
               onClick={saveEdit} disabled={actionLoading}>
-              {actionLoading ? '◌ SAVING...' : '✓ SAVE CHANGES'}
+              {actionLoading ? '◌ SAVING...' : <><Save size={13} /> SAVE CHANGES</>}
             </button>
           </div>
         </div>
@@ -217,7 +218,7 @@ function DocCard({
             onClick={() => setMode('view')}>CANCEL</button>
           <button className="btn btn-red" style={{ fontSize: '0.7rem', padding: '4px 10px' }}
             onClick={deleteDoc} disabled={actionLoading}>
-            {actionLoading ? '◌' : '✕ DELETE'}
+            {actionLoading ? '◌' : <><Trash2 size={13} /> DELETE</>}
           </button>
         </div>
       )}
@@ -347,7 +348,7 @@ export default function QueryView() {
             <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>{queryElapsed}ms</span>
           )}
           <button className="btn btn-green" style={{ padding: '6px 18px' }} onClick={runQuery} disabled={loading}>
-            {loading ? '◌ RUNNING...' : '▶ EXECUTE'}
+            {loading ? '◌ RUNNING...' : <><Play size={13} fill="currentColor" strokeWidth={0} /> EXECUTE</>}
           </button>
         </div>
       </div>

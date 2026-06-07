@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Terminal from './Terminal'
 import { useAppStore } from '@/lib/store'
 import Select from './Select'
+import { Play, Square, RefreshCw, X } from 'lucide-react'
 
 interface ProfileDoc {
   ns?: string
@@ -81,9 +82,9 @@ export default function SlowView() {
         <span className="glow-green text-base md:text-lg font-bold tracking-widest">// SLOW QUERIES</span>
         <Select value={db} onChange={setDb} options={dbs} minWidth={110} />
         <button className={`btn ${profilingOn ? 'btn-red' : 'btn-green'}`} onClick={toggleProfiling}>
-          {profilingOn ? '■ STOP' : '▶ PROFILE'}
+          {profilingOn ? <><Square size={12} fill="currentColor" strokeWidth={0} /> STOP</> : <><Play size={12} fill="currentColor" strokeWidth={0} /> PROFILE</>}
         </button>
-        <button className="btn btn-cyan" onClick={load}>↺ REFRESH</button>
+        <button className="btn btn-cyan" onClick={load}><RefreshCw size={13} strokeWidth={2} /> REFRESH</button>
         {profilingOn && <span className="tag-badge green">PROFILING &gt;100ms</span>}
         {error && <span className="text-xs" style={{ color: 'var(--red)' }}>⚠ {error}</span>}
       </div>
@@ -170,7 +171,7 @@ export default function SlowView() {
             style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
             contentStyle={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}
           >
-            <button className="btn btn-red w-full text-xs" style={{ padding: '5px', justifyContent: 'center', flexShrink: 0 }} onClick={() => setSelected(null)}>✕ CLOSE</button>
+            <button className="btn btn-red w-full" style={{ padding: '5px', justifyContent: 'center', flexShrink: 0, fontSize: '0.72rem' }} onClick={() => setSelected(null)}><X size={13} strokeWidth={2} /> CLOSE</button>
             {/* Fixed metadata fields */}
             <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.72rem' }}>
               {[

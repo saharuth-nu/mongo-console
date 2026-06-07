@@ -7,6 +7,6 @@ if [ $# -lt 1 ]; then
 else
   # npm run build:prod
   docker login
-  docker buildx build --platform linux/amd64 --build-arg BASE_PATH=/db-console -t saharuth20/mongo-console:$1 .
-  docker push saharuth20/mongo-console:$1
+  docker buildx build --platform linux/amd64 --build-arg BASE_PATH=/db-console -t saharuth/mongo-console:$1 .
+  docker push saharuth/mongo-console:$1
 fi
