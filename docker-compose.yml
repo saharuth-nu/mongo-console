@@ -20,9 +20,7 @@ services:
 
   # ── Mongo Console (Next.js app) ───────────────────────────────────────────────
   mongo-console:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: saharuth20/mongo-console:v1.0.0
     container_name: mongo-console
     restart: unless-stopped
     ports:
@@ -32,6 +30,8 @@ services:
       # Format: label|uri,label|uri   OR just   uri,uri
       MONGODB_URI: >-
         Local|mongodb://mongo:27017/?authSource=admin
+      # Set to empty string "" if serving at root path /
+      NEXT_PUBLIC_BASE_PATH: /db-console
     depends_on:
       mongo:
         condition: service_healthy
