@@ -1,0 +1,61 @@
+import { create } from 'zustand'
+
+interface AppState {
+  // Connection
+  connected: boolean
+  setConnected: (v: boolean) => void
+
+  // Browser
+  browserDb: string
+  browserCol: string
+  setBrowserDb: (v: string) => void
+  setBrowserCol: (v: string) => void
+
+  // Query
+  queryDb: string
+  queryCol: string
+  queryType: 'find' | 'aggregate'
+  queryCode: string
+  queryResults: unknown[] | null
+  queryError: string | null
+  queryElapsed: number | null
+  setQueryDb: (v: string) => void
+  setQueryCol: (v: string) => void
+  setQueryType: (v: 'find' | 'aggregate') => void
+  setQueryCode: (v: string) => void
+  setQueryResults: (results: unknown[] | null, elapsed: number | null, error: string | null) => void
+
+  // Slow queries
+  slowDb: string
+  setSlowDb: (v: string) => void
+}
+
+export const useAppStore = create<AppState>((set) => ({
+  // Connection
+  connected: false,
+  setConnected: (v) => set({ connected: v }),
+
+  // Browser
+  browserDb: '',
+  browserCol: '',
+  setBrowserDb: (v) => set({ browserDb: v }),
+  setBrowserCol: (v) => set({ browserCol: v }),
+
+  // Query
+  queryDb: '',
+  queryCol: '',
+  queryType: 'find',
+  queryCode: '{}',
+  queryResults: null,
+  queryError: null,
+  queryElapsed: null,
+  setQueryDb: (v) => set({ queryDb: v }),
+  setQueryCol: (v) => set({ queryCol: v }),
+  setQueryType: (v) => set({ queryType: v, queryCode: v === 'aggregate' ? '[\n  { "$match": {} },\n  { "$limit": 10 }\n]' : '{}' }),
+  setQueryCode: (v) => set({ queryCode: v }),
+  setQueryResults: (results, elapsed, error) => set({ queryResults: results, queryElapsed: elapsed, queryError: error }),
+
+  // Slow queries
+  slowDb: '',
+  setSlowDb: (v) => set({ slowDb: v }),
+}))
