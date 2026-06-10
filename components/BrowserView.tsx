@@ -103,7 +103,7 @@ export default function BrowserView() {
   const totalPages = Math.ceil(total / 20) || 1
 
   const sidebar = (
-    <div className="overflow-y-auto h-full" style={{ background: 'var(--bg-panel)' }}>
+    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg-panel)', minHeight: 0 }}>
       <div className="px-3 py-2 text-xs font-bold tracking-widest uppercase flex items-center justify-between"
         style={{ color: 'var(--green)', borderBottom: '1px solid var(--border)' }}>
         <span className="flex items-center gap-1.5"><Database size={12} strokeWidth={2} /> DATABASES</span>
@@ -166,7 +166,7 @@ export default function BrowserView() {
           transition-transform duration-200
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
-        style={{ borderRight: '1px solid var(--border)' }}
+        style={{ borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       >
         {sidebar}
       </div>
