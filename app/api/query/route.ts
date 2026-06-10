@@ -1,6 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getClient } from '@/lib/mongo'
-import { ObjectId } from 'mongodb'
+import { ObjectId, Decimal128, Binary } from 'mongodb'
+
+// ─── BSON deserialize — convert $oid/$date markers back to native types ────────
+
+function deserializeBson(obj: unknown): unknown {
+  if (obj === null || obj === undefined) return obj
+  if (typeof obj !== 'object') return obj
+  if (Array.isArray(obj)) return obj.map(deserializeBson)
+  const rec = obj as Record<string, unknown>
+  if ('$oid' in rec && typeof rec['$oid'] === 'string') {
+    try { return new ObjectId(rec['$oid']) } catch { return obj }
+  }
+  if ('$date' in rec && typeof rec['$date'] === 'string') {
+    return new Date(rec['$date'])
+  }
+  const result: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(rec)) {
+    result[k] = deserializeBson(v)
+  }
+  return result
+}
+
+// ─── Serialize MongoDB docs to plain JSON-safe objects ─────────────────────────
+
+function serializeDoc(doc: unknown): unknown {
+  if (doc === null || doc === undefined) return doc
+  if (doc instanceof ObjectId) return { $oid: doc.toHexString() }
+  if (doc instanceof Date) return { $date: doc.toISOString() }
+  if (doc instanceof Decimal128) return { $numberDecimal: doc.toString() }
+  if (doc instanceof Binary) return { $binary: doc.toString('base64') }
+  if (typeof doc !== 'object') return doc
+  if (Array.isArray(doc)) return doc.map(serializeDoc)
+  const result: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(doc as Record<string, unknown>)) {
+    result[k] = serializeDoc(v)
+  }
+  return result
+}
 
 function toFilter(id: string) {
   try { return { _id: new ObjectId(id) } } catch { return { _id: id as unknown as ObjectId } }
@@ -14,11 +51,13 @@ export async function POST(req: NextRequest) {
     const col = client.db(db).collection(collection)
     let results
     if (queryType === 'aggregate') {
-      results = await col.aggregate(pipeline).limit(limit).toArray()
+      const bsonPipeline = (Array.isArray(pipeline) ? pipeline : [pipeline]).map(deserializeBson)
+      results = await col.aggregate(bsonPipeline as object[]).limit(limit).toArray()
     } else {
-      results = await col.find(filter ?? {}).limit(limit).toArray()
+      const bsonFilter = deserializeBson(filter ?? {}) as object
+      results = await col.find(bsonFilter).limit(limit).toArray()
     }
-    return NextResponse.json({ results, count: results.length })
+    return NextResponse.json({ results: serializeDoc(results), count: results.length })
   } catch (e: unknown) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })
   }
@@ -39,7 +78,7 @@ export async function PATCH(req: NextRequest) {
       { returnDocument: 'after' }
     )
     if (!result) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
-    return NextResponse.json({ ok: true, doc: result })
+    return NextResponse.json({ ok: true, doc: serializeDoc(result) })
   } catch (e: unknown) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })
   }

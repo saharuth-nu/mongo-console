@@ -154,6 +154,14 @@ export async function disconnectServer(id: string): Promise<void> {
   if (activeServerId === id) activeServerId = null
 }
 
+export async function disconnectAll(): Promise<void> {
+  for (const [id, entry] of clients.entries()) {
+    try { await entry.client.close() } catch { /* ignore */ }
+    clients.delete(id)
+  }
+  activeServerId = null
+}
+
 // ─── Legacy compat ────────────────────────────────────────────────────────────
 
 /** @deprecated */

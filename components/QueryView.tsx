@@ -9,6 +9,23 @@ import { Play, Copy, Check, Pencil, Trash2, ChevronDown, ChevronRight, X, Save }
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
 
+// ─── Query text transformer — relaxed MongoDB syntax → strict JSON ────────────
+
+function transformMongoQuery(text: string): string {
+  // ObjectId("...") or ObjectId('...') → {"$oid":"..."}
+  text = text.replace(/ObjectId\(\s*["']([a-f0-9]{24})["']\s*\)/gi, '{"$$oid":"$1"}')
+  // ISODate("...") → {"$date":"..."}
+  text = text.replace(/ISODate\(\s*["']([^"']+)["']\s*\)/gi, '{"$$date":"$1"}')
+  // /pattern/flags → {"$regex":"pattern","$options":"flags"}
+  text = text.replace(/\/([^/\n\\]+)\/([gimsuy]*)/g, (_, pat, flags) => {
+    const escaped = pat.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    return flags ? `{"$$regex":"${escaped}","$$options":"${flags}"}` : `{"$$regex":"${escaped}"}`
+  })
+  // Unquoted object keys → quoted keys  e.g.  { name: ... } → { "name": ... }
+  text = text.replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)(\s*:)/g, '$1"$2"$3')
+  return text
+}
+
 // ─── JSON renderer ────────────────────────────────────────────────────────────
 
 function JsonNode({ data, depth = 0 }: { data: unknown; depth?: number }) {
@@ -26,7 +43,14 @@ function JsonNode({ data, depth = 0 }: { data: unknown; depth?: number }) {
     </span>
   }
   if (typeof data === 'object') {
-    const entries = Object.entries(data as Record<string, unknown>)
+    const rec = data as Record<string, unknown>
+    // Render special BSON markers inline
+    if ('$oid' in rec) return <span style={{ color: 'var(--yellow)' }}>ObjectId("<span style={{ color: '#e5c07b' }}>{String(rec['$oid'])}</span>")</span>
+    if ('$date' in rec) return <span style={{ color: 'var(--cyan)' }}>ISODate("<span style={{ color: '#56b6c2' }}>{String(rec['$date'])}</span>")</span>
+    if ('$numberDecimal' in rec) return <span style={{ color: 'var(--yellow)' }}>Decimal128({String(rec['$numberDecimal'])})</span>
+    if ('$regex' in rec) return <span style={{ color: '#c678dd' }}>/{String(rec['$regex'])}/{rec['$options'] ? String(rec['$options']) : ''}</span>
+
+    const entries = Object.entries(rec)
     if (collapsed) return <span className="cursor-pointer" style={{ color: 'var(--text-dim)' }} onClick={() => setCollapsed(false)}>{'{'}…{entries.length} keys{'}'} ▶</span>
     return <span>
       <span className="cursor-pointer" style={{ color: 'var(--text-secondary)' }} onClick={() => setCollapsed(true)}>▼ {'{'}</span>
@@ -288,7 +312,12 @@ export default function QueryView() {
     const start = Date.now()
     try {
       let parsed: unknown
-      try { parsed = JSON.parse(queryCode) } catch { throw new Error('Invalid JSON: ' + queryCode.slice(0, 60)) }
+      try {
+        const transformed = transformMongoQuery(queryCode)
+        parsed = JSON.parse(transformed)
+      } catch {
+        throw new Error('Invalid query syntax: ' + queryCode.slice(0, 80))
+      }
       const body = queryType === 'aggregate'
         ? { db: queryDb, collection: queryCol, queryType: 'aggregate', pipeline: parsed }
         : { db: queryDb, collection: queryCol, queryType: 'find', filter: parsed }

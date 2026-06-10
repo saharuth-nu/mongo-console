@@ -3,6 +3,7 @@ import {
   getEnvServers, hasEnvUri,
   connectServer, setActiveServer, getActiveClient,
   getActiveServerId, isServerConnected, listConnectedServers,
+  disconnectServer, disconnectAll,
   injectCredsIntoUri, buildUri,
 } from '@/lib/mongo'
 
@@ -93,6 +94,23 @@ export async function PATCH(req: NextRequest) {
     }
     setActiveServer(serverId)
     return NextResponse.json({ ok: true, serverId })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 })
+  }
+}
+
+// ─── DELETE — disconnect one or all servers ───────────────────────────────────
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({}))
+    const { serverId } = body as { serverId?: string }
+    if (serverId) {
+      await disconnectServer(serverId)
+    } else {
+      await disconnectAll()
+    }
+    return NextResponse.json({ ok: true })
   } catch (e: unknown) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })
   }

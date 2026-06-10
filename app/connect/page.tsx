@@ -226,6 +226,28 @@ export default function ConnectPage() {
     setLoading(null)
   }
 
+  // ── Disconnect one server ─────────────────────────────────────────────────
+  async function disconnectOne(sid: string) {
+    setLoading(`disc_${sid}`)
+    await fetch(apiUrl('/api/connect'), {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ serverId: sid }),
+    })
+    setConnectedServers(prev => prev.filter(s => s !== sid))
+    if (activeServerId === sid) setActiveServerId(null)
+    setLoading(null)
+  }
+
+  // ── Disconnect all ────────────────────────────────────────────────────────
+  async function disconnectAll() {
+    setLoading('__disc_all__')
+    await fetch(apiUrl('/api/connect'), { method: 'DELETE' })
+    setConnectedServers([])
+    setActiveServerId(null)
+    setLoading(null)
+  }
+
   const isActive = (sid: string) => activeServerId === sid
   const isConnected = (sid: string) => connectedServers.includes(sid)
 
@@ -269,13 +291,24 @@ export default function ConnectPage() {
                 })()}
               </span>
             </div>
-            <button
-              className="btn btn-green"
-              style={{ padding: '4px 12px', fontSize: '0.7rem', flexShrink: 0 }}
-              onClick={() => router.push('/')}
-            >
-              ▶ DASHBOARD
-            </button>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <button
+                className="btn btn-green"
+                style={{ padding: '4px 12px', fontSize: '0.7rem' }}
+                onClick={() => router.push('/')}
+              >
+                ▶ DASHBOARD
+              </button>
+              <button
+                className="btn btn-red"
+                style={{ padding: '4px 10px', fontSize: '0.7rem' }}
+                title="Disconnect all servers"
+                onClick={disconnectAll}
+                disabled={loading === '__disc_all__'}
+              >
+                {loading === '__disc_all__' ? '◌' : '⏻'} LOGOUT
+              </button>
+            </div>
           </div>
         )}
 
@@ -340,9 +373,20 @@ export default function ConnectPage() {
                             className="btn btn-cyan"
                             style={{ padding: '3px 10px', fontSize: '0.68rem' }}
                             onClick={e => { e.stopPropagation(); switchServer(sid) }}
-                            disabled={thisLoading}
+                            disabled={!!thisLoading}
                           >
                             {thisLoading ? '◌' : '⇄'} SWITCH
+                          </button>
+                        )}
+                        {connected && (
+                          <button
+                            className="btn btn-red"
+                            style={{ padding: '3px 8px', fontSize: '0.68rem' }}
+                            title="Disconnect this server"
+                            onClick={e => { e.stopPropagation(); disconnectOne(sid) }}
+                            disabled={loading === `disc_${sid}`}
+                          >
+                            {loading === `disc_${sid}` ? '◌' : '⏻'}
                           </button>
                         )}
                         {!connected && !active && (
