@@ -16,6 +16,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ db:
         }
       })
     )
+    withStats.sort((a, b) => a.name.localeCompare(b.name))
     return NextResponse.json({ collections: withStats })
   } catch (e: unknown) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })
