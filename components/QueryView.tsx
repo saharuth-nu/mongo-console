@@ -415,10 +415,16 @@ export default function QueryView() {
             <div ref={editorContainerRef} style={{ position: 'absolute', inset: 0, top: 36 }}>
               <MonacoEditor
                 height={editorHeight}
-                defaultLanguage="json"
+                defaultLanguage="javascript"
                 value={queryCode}
                 onChange={v => setQueryCode(v ?? '')}
                 theme="vs-dark"
+                beforeMount={monaco => {
+                  monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                    noSemanticValidation: true,
+                    noSyntaxValidation: true,
+                  })
+                }}
                 options={{
                   fontSize: 13,
                   fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
