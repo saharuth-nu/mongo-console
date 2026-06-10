@@ -265,6 +265,11 @@ export default function QueryView() {
   const [viewMode, setViewMode] = useState<'cards' | 'raw'>('cards')
   // local copy of results for optimistic UI updates
   const [localResults, setLocalResults] = useState<Record<string, unknown>[] | null>(null)
+  const [queryPage, setQueryPage] = useState(1)
+  const [queryLimit, setQueryLimit] = useState(50)
+  const [queryTotal, setQueryTotal] = useState<number | null>(null)
+  // store last parsed query so page nav can re-run without re-parsing
+  const lastParsedRef = useRef<unknown>(null)
 
   const editorContainerRef = useRef<HTMLDivElement>(null)
   const [editorHeight, setEditorHeight] = useState(400)
@@ -307,20 +312,26 @@ export default function QueryView() {
     setLocalResults(queryResults as Record<string, unknown>[] | null)
   }, [queryResults])
 
-  async function runQuery() {
+  async function runQuery(page = 1) {
     setLoading(true)
     const start = Date.now()
     try {
       let parsed: unknown
-      try {
-        const transformed = transformMongoQuery(queryCode)
-        parsed = JSON.parse(transformed)
-      } catch {
-        throw new Error('Invalid query syntax: ' + queryCode.slice(0, 80))
+      if (page === 1) {
+        try {
+          const transformed = transformMongoQuery(queryCode)
+          parsed = JSON.parse(transformed)
+          lastParsedRef.current = parsed
+        } catch {
+          throw new Error('Invalid query syntax: ' + queryCode.slice(0, 80))
+        }
+      } else {
+        parsed = lastParsedRef.current
       }
+      setQueryPage(page)
       const body = queryType === 'aggregate'
-        ? { db: queryDb, collection: queryCol, queryType: 'aggregate', pipeline: parsed }
-        : { db: queryDb, collection: queryCol, queryType: 'find', filter: parsed }
+        ? { db: queryDb, collection: queryCol, queryType: 'aggregate', pipeline: parsed, page, limit: queryLimit }
+        : { db: queryDb, collection: queryCol, queryType: 'find', filter: parsed, page, limit: queryLimit }
       const res = await fetch(apiUrl('/api/query'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -329,9 +340,11 @@ export default function QueryView() {
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setQueryResults(data.results, Date.now() - start, null)
+      setQueryTotal(data.total ?? null)
       setActivePanel('results')
     } catch (e) {
       setQueryResults(null, null, (e as Error).message)
+      setQueryTotal(null)
       setActivePanel('results')
     }
     setLoading(false)
@@ -376,7 +389,7 @@ export default function QueryView() {
           {queryElapsed !== null && !loading && (
             <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>{queryElapsed}ms</span>
           )}
-          <button className="btn btn-green" style={{ padding: '6px 18px' }} onClick={runQuery} disabled={loading}>
+          <button className="btn btn-green" style={{ padding: '6px 18px' }} onClick={() => runQuery(1)} disabled={loading}>
             {loading ? '◌ RUNNING...' : <><Play size={13} fill="currentColor" strokeWidth={0} /> EXECUTE</>}
           </button>
         </div>
@@ -427,7 +440,7 @@ export default function QueryView() {
         <div className={activePanel === 'editor' ? 'hidden md:flex' : 'flex'}
           style={{ flex: 1, flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
           <Terminal
-            title={results ? `RESULTS (${resultCount})` : queryError ? 'ERROR' : 'RESULTS'}
+            title={results ? `RESULTS (${queryTotal ?? resultCount})` : queryError ? 'ERROR' : 'RESULTS'}
             accent={queryError ? 'red' : 'green'}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
             contentStyle={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', padding: '8px' }}
@@ -436,10 +449,51 @@ export default function QueryView() {
               <pre style={{ color: 'var(--red)', fontSize: '0.75rem', whiteSpace: 'pre-wrap', margin: 0 }}>{queryError}</pre>
             ) : results && results.length > 0 ? (
               <>
-                {/* View toggle + count */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexShrink: 0 }}>
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>{resultCount} document{resultCount !== 1 ? 's' : ''}</span>
-                  <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+                {/* View toggle + count + pagination */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+                  {/* Count info */}
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>
+                    {queryTotal !== null
+                      ? `${(queryPage - 1) * queryLimit + 1}–${Math.min(queryPage * queryLimit, queryTotal)} of ${queryTotal.toLocaleString()}`
+                      : `${resultCount} document${resultCount !== 1 ? 's' : ''}`}
+                  </span>
+
+                  {/* Pagination controls */}
+                  {queryTotal !== null && queryTotal > queryLimit && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <button
+                        onClick={() => runQuery(1)} disabled={queryPage <= 1 || loading}
+                        style={{ padding: '2px 7px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 3, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-dim)', opacity: queryPage <= 1 ? .3 : 1 }}>
+                        «
+                      </button>
+                      <button
+                        onClick={() => runQuery(queryPage - 1)} disabled={queryPage <= 1 || loading}
+                        style={{ padding: '2px 7px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 3, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-dim)', opacity: queryPage <= 1 ? .3 : 1 }}>
+                        ‹
+                      </button>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', padding: '0 4px' }}>
+                        {queryPage} / {Math.ceil(queryTotal / queryLimit)}
+                      </span>
+                      <button
+                        onClick={() => runQuery(queryPage + 1)} disabled={queryPage >= Math.ceil(queryTotal / queryLimit) || loading}
+                        style={{ padding: '2px 7px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 3, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-dim)', opacity: queryPage >= Math.ceil(queryTotal / queryLimit) ? .3 : 1 }}>
+                        ›
+                      </button>
+                      <button
+                        onClick={() => runQuery(Math.ceil(queryTotal / queryLimit))} disabled={queryPage >= Math.ceil(queryTotal / queryLimit) || loading}
+                        style={{ padding: '2px 7px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 3, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-dim)', opacity: queryPage >= Math.ceil(queryTotal / queryLimit) ? .3 : 1 }}>
+                        »
+                      </button>
+                    </div>
+                  )}
+
+                  <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, alignItems: 'center' }}>
+                    {/* Limit selector */}
+                    <select value={queryLimit} onChange={e => setQueryLimit(Number(e.target.value))}
+                      style={{ fontSize: '0.65rem', padding: '2px 4px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                      {[20, 50, 100, 200].map(n => <option key={n} value={n}>{n}/page</option>)}
+                    </select>
+                    {/* View mode */}
                     {(['cards', 'raw'] as const).map(m => (
                       <button key={m} onClick={() => setViewMode(m)}
                         style={{

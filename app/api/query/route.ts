@@ -46,18 +46,25 @@ function toFilter(id: string) {
 // ─── POST — find / aggregate ──────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
-    const { db, collection, queryType, pipeline, filter, limit = 50 } = await req.json()
+    const { db, collection, queryType, pipeline, filter, limit = 50, page = 1 } = await req.json()
+    const skip = (Math.max(1, page) - 1) * limit
     const client = await getClient()
     const col = client.db(db).collection(collection)
-    let results
+    let results: object[]
+    let total: number
     if (queryType === 'aggregate') {
-      const bsonPipeline = (Array.isArray(pipeline) ? pipeline : [pipeline]).map(deserializeBson)
-      results = await col.aggregate(bsonPipeline as object[]).limit(limit).toArray()
+      const bsonPipeline = (Array.isArray(pipeline) ? pipeline : [pipeline]).map(deserializeBson) as object[]
+      // Count via $count stage, then fetch page
+      const countPipeline = [...bsonPipeline, { $count: '__total' }]
+      const countRes = await col.aggregate(countPipeline).toArray()
+      total = (countRes[0] as { __total?: number })?.__total ?? 0
+      results = await col.aggregate([...bsonPipeline, { $skip: skip }, { $limit: limit }]).toArray()
     } else {
       const bsonFilter = deserializeBson(filter ?? {}) as object
-      results = await col.find(bsonFilter).limit(limit).toArray()
+      total = await col.countDocuments(bsonFilter)
+      results = await col.find(bsonFilter).skip(skip).limit(limit).toArray()
     }
-    return NextResponse.json({ results: serializeDoc(results), count: results.length })
+    return NextResponse.json({ results: serializeDoc(results), count: results.length, total, page, limit })
   } catch (e: unknown) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })
   }
