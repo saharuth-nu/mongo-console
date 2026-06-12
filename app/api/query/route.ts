@@ -81,7 +81,7 @@ export async function PATCH(req: NextRequest) {
     const col = client.db(db).collection(collection)
     const result = await col.findOneAndReplace(
       toFilter(id),
-      update,
+      deserializeBson(update) as object,
       { returnDocument: 'after' }
     )
     if (!result) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
