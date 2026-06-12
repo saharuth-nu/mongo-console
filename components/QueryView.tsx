@@ -5,7 +5,7 @@ import Terminal from './Terminal'
 import dynamic from 'next/dynamic'
 import { useAppStore } from '@/lib/store'
 import Select from './Select'
-import { Play, Copy, Check, Pencil, Trash2, ChevronDown, ChevronRight, X, Save } from 'lucide-react'
+import { Play, Copy, Check, Pencil, Trash2, ChevronDown, ChevronRight, X, Save, RefreshCw } from 'lucide-react'
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
 
@@ -504,6 +504,12 @@ export default function QueryView() {
                   )}
 
                   <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, alignItems: 'center' }}>
+                    {/* Refresh */}
+                    <button onClick={() => runQuery(queryPage)} disabled={loading}
+                      title="Refresh"
+                      style={{ padding: '2px 8px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 3, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <RefreshCw size={11} strokeWidth={2} />
+                    </button>
                     {/* Limit selector */}
                     <select value={queryLimit} onChange={e => setQueryLimit(Number(e.target.value))}
                       style={{ fontSize: '0.65rem', padding: '2px 4px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--text-secondary)', cursor: 'pointer' }}>
