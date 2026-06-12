@@ -291,7 +291,7 @@ export default function QueryView() {
     fetch(apiUrl(`/api/collections/${queryDb}`)).then(r => r.json()).then(d => {
       const names = (d.collections ?? []).map((x: { name: string }) => x.name)
       setCols(names)
-      if (names.length && !queryCol) setQueryCol(names[0])
+      if (names.length) setQueryCol(names[0])
     })
   }, [queryDb])
 
