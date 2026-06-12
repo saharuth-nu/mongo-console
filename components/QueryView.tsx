@@ -90,7 +90,11 @@ function DocCard({
   const [actionError, setActionError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const id = String(doc._id ?? '')
+  // _id may be serialized as { $oid: "..." } from the server
+  const rawId = doc._id
+  const id = rawId && typeof rawId === 'object' && '$oid' in (rawId as Record<string, unknown>)
+    ? String((rawId as Record<string, unknown>)['$oid'])
+    : String(rawId ?? '')
   const preview = Object.entries(doc)
     .filter(([k]) => k !== '_id')
     .slice(0, 3)
@@ -350,12 +354,18 @@ export default function QueryView() {
     setLoading(false)
   }
 
+  function extractId(rawId: unknown): string {
+    if (rawId && typeof rawId === 'object' && '$oid' in (rawId as Record<string, unknown>))
+      return String((rawId as Record<string, unknown>)['$oid'])
+    return String(rawId ?? '')
+  }
+
   const handleUpdated = useCallback((id: string, newDoc: Record<string, unknown>) => {
-    setLocalResults(prev => prev?.map(d => String(d._id) === id ? newDoc : d) ?? prev)
+    setLocalResults(prev => prev?.map(d => extractId(d._id) === id ? newDoc : d) ?? prev)
   }, [])
 
   const handleDeleted = useCallback((id: string) => {
-    setLocalResults(prev => prev?.filter(d => String(d._id) !== id) ?? prev)
+    setLocalResults(prev => prev?.filter(d => extractId(d._id) !== id) ?? prev)
   }, [])
 
   const results = localResults
