@@ -35,8 +35,8 @@ export default function Navbar() {
       .then(d => {
         setConnected(d.connected)
         // Redirect to connect page if no connection and not already there
-        if (!d.connected && path !== '/connect') {
-          router.push('/connect')
+        if (!d.connected && path !== '/' && path !== '/connect') {
+          router.push('/')
           return
         }
         // Resolve active server label
@@ -53,7 +53,7 @@ export default function Navbar() {
       })
       .catch(() => {
         setConnected(false)
-        if (path !== '/connect') router.push('/connect')
+        if (path !== '/' && path !== '/connect') router.push('/')
       })
   }, [path])
 
