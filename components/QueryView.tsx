@@ -503,11 +503,11 @@ export default function QueryView() {
                     </div>
                   )}
 
-                  <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, alignItems: 'center', height: 26 }}>
                     {/* Refresh */}
                     <button onClick={() => runQuery(queryPage)} disabled={loading}
                       title="Refresh"
-                      style={{ padding: '2px 8px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 3, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      style={{ height: 26, width: 26, padding: 0, fontSize: '0.65rem', cursor: 'pointer', borderRadius: 3, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <RefreshCw size={11} strokeWidth={2} />
                     </button>
                     {/* Limit selector */}
@@ -516,16 +516,19 @@ export default function QueryView() {
                       onChange={v => setQueryLimit(Number(v))}
                       options={['20', '50', '100', '200']}
                       labels={{ '20': '20/page', '50': '50/page', '100': '100/page', '200': '200/page' }}
-                      minWidth={80}
+                      minWidth={85}
+                      height={26}
                     />
                     {/* View mode */}
                     {(['cards', 'raw'] as const).map(m => (
                       <button key={m} onClick={() => setViewMode(m)}
                         style={{
-                          padding: '2px 10px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 3,
+                          height: 26, padding: '0 10px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 3,
                           background: viewMode === m ? 'rgba(0,255,65,.12)' : 'transparent',
                           border: `1px solid ${viewMode === m ? 'var(--green)' : 'var(--border)'}`,
                           color: viewMode === m ? 'var(--green)' : 'var(--text-dim)',
+                          display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap',
+                          fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, letterSpacing: '.05em',
                         }}>
                         {m === 'cards' ? '▤ CARDS' : '{ } RAW'}
                       </button>

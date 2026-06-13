@@ -7,10 +7,11 @@ interface Props {
   options: string[]
   labels?: Record<string, string>
   minWidth?: number
+  height?: number
   placeholder?: string
 }
 
-export default function Select({ value, onChange, options, labels, minWidth = 100, placeholder = '—' }: Props) {
+export default function Select({ value, onChange, options, labels, minWidth = 100, height, placeholder = '—' }: Props) {
   const label = (opt: string) => labels?.[opt] ?? opt
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -52,7 +53,8 @@ export default function Select({ value, onChange, options, labels, minWidth = 10
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 8,
-          padding: '5px 10px',
+          padding: height ? '0 10px' : '5px 10px',
+          height: height ?? 'auto',
           background: open ? 'rgba(0,255,65,.08)' : 'rgba(0,255,65,.04)',
           border: `1px solid ${open ? 'var(--border-mid)' : 'var(--border)'}`,
           borderRadius: 'var(--radius)',
