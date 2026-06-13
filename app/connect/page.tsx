@@ -324,18 +324,34 @@ export default function ConnectPage() {
                 const selected = selectedIdx === idx
                 const thisLoading = loading === sid
 
+                const baseBg = active ? 'rgba(0,255,65,.05)' : selected ? 'rgba(0,212,255,.04)' : 'transparent'
+                const hoverBg = active ? 'rgba(0,255,65,.09)' : selected ? 'rgba(0,212,255,.08)' : 'rgba(255,255,255,.04)'
+                const baseBorder = active ? 'var(--green)' : selected ? 'var(--cyan)' : 'var(--border)'
+                const hoverBorder = active ? 'var(--green)' : selected ? 'var(--cyan)' : 'var(--border-mid)'
+
                 return (
                   <div key={idx}
-                    className={`server-row${active ? ' server-row-active' : selected ? ' server-row-selected' : ''}`}
                     style={{
-                      border: `1px solid ${active ? 'var(--green)' : selected ? 'var(--cyan)' : 'var(--border)'}`,
+                      border: `1px solid ${baseBorder}`,
                       borderRadius: 'var(--radius)',
-                      background: active ? 'rgba(0,255,65,.05)' : selected ? 'rgba(0,212,255,.04)' : 'transparent',
+                      background: baseBg,
                       overflow: 'hidden',
-                    }}>
+                      transition: 'background .15s, border-color .15s',
+                    }}
+                    onMouseEnter={e => {
+                      const el = e.currentTarget as HTMLDivElement
+                      el.style.background = hoverBg
+                      el.style.borderColor = hoverBorder
+                    }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLDivElement
+                      el.style.background = baseBg
+                      el.style.borderColor = baseBorder
+                    }}
+                  >
                     {/* Server row */}
                     <div
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', cursor: connected ? 'default' : 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', cursor: active ? 'default' : 'pointer' }}
                       onClick={() => {
                         if (active) return
                         if (connected) switchServer(sid)
