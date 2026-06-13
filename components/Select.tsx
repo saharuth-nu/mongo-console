@@ -5,11 +5,13 @@ interface Props {
   value: string
   onChange: (v: string) => void
   options: string[]
+  labels?: Record<string, string>
   minWidth?: number
   placeholder?: string
 }
 
-export default function Select({ value, onChange, options, minWidth = 100, placeholder = '—' }: Props) {
+export default function Select({ value, onChange, options, labels, minWidth = 100, placeholder = '—' }: Props) {
+  const label = (opt: string) => labels?.[opt] ?? opt
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -65,7 +67,7 @@ export default function Select({ value, onChange, options, minWidth = 100, place
         }}
       >
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {value || placeholder}
+          {value ? label(value) : placeholder}
         </span>
         <span style={{
           color: 'var(--green)',
@@ -126,7 +128,7 @@ export default function Select({ value, onChange, options, minWidth = 100, place
                 }
               }}
             >
-              <span>{opt}</span>
+              <span>{label(opt)}</span>
               {opt === value && <span style={{ fontSize: '0.6rem', color: 'var(--green)' }}>✓</span>}
             </div>
           ))}

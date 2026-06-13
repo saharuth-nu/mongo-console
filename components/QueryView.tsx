@@ -511,10 +511,13 @@ export default function QueryView() {
                       <RefreshCw size={11} strokeWidth={2} />
                     </button>
                     {/* Limit selector */}
-                    <select value={queryLimit} onChange={e => setQueryLimit(Number(e.target.value))}
-                      style={{ fontSize: '0.65rem', padding: '2px 4px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                      {[20, 50, 100, 200].map(n => <option key={n} value={n}>{n}/page</option>)}
-                    </select>
+                    <Select
+                      value={String(queryLimit)}
+                      onChange={v => setQueryLimit(Number(v))}
+                      options={['20', '50', '100', '200']}
+                      labels={{ '20': '20/page', '50': '50/page', '100': '100/page', '200': '200/page' }}
+                      minWidth={80}
+                    />
                     {/* View mode */}
                     {(['cards', 'raw'] as const).map(m => (
                       <button key={m} onClick={() => setViewMode(m)}
