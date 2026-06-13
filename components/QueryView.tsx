@@ -540,7 +540,7 @@ export default function QueryView() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {results.map((doc, i) => (
                       <DocCard
-                        key={String(doc._id ?? i)}
+                        key={extractId(doc._id) || i}
                         doc={doc}
                         index={i}
                         db={queryDb}
