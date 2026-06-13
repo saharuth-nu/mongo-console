@@ -35,7 +35,8 @@ export default function Navbar() {
       .then(d => {
         setConnected(d.connected)
         // Redirect to connect page if no connection and not already there
-        if (!d.connected && path !== '/' && path !== '/connect') {
+        const cleanPath = path.replace(/\/$/, '') || '/'
+        if (!d.connected && cleanPath !== '/' && cleanPath !== '/connect') {
           router.push('/')
           return
         }
@@ -53,7 +54,8 @@ export default function Navbar() {
       })
       .catch(() => {
         setConnected(false)
-        if (path !== '/' && path !== '/connect') router.push('/')
+        const cleanPath = path.replace(/\/$/, '') || '/'
+        if (cleanPath !== '/' && cleanPath !== '/connect') router.push('/')
       })
   }, [path])
 
