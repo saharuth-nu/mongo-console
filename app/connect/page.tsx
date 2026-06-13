@@ -325,13 +325,14 @@ export default function ConnectPage() {
                 const thisLoading = loading === sid
 
                 return (
-                  <div key={idx} style={{
-                    border: `1px solid ${active ? 'var(--green)' : selected ? 'var(--cyan)' : 'var(--border)'}`,
-                    borderRadius: 'var(--radius)',
-                    background: active ? 'rgba(0,255,65,.05)' : selected ? 'rgba(0,212,255,.04)' : 'transparent',
-                    overflow: 'hidden',
-                    transition: 'all .15s',
-                  }}>
+                  <div key={idx}
+                    className={`server-row${active ? ' server-row-active' : selected ? ' server-row-selected' : ''}`}
+                    style={{
+                      border: `1px solid ${active ? 'var(--green)' : selected ? 'var(--cyan)' : 'var(--border)'}`,
+                      borderRadius: 'var(--radius)',
+                      background: active ? 'rgba(0,255,65,.05)' : selected ? 'rgba(0,212,255,.04)' : 'transparent',
+                      overflow: 'hidden',
+                    }}>
                     {/* Server row */}
                     <div
                       style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', cursor: connected ? 'default' : 'pointer' }}

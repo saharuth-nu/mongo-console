@@ -214,6 +214,15 @@ body::before {
 .icon-btn.active-delete { color: var(--red);  }
 .icon-btn.copied        { color: var(--green); }
 
+/* ─── Server row (Connect page) ──────────────────── */
+.server-row {
+  transition: background .15s, border-color .15s;
+}
+.server-row:hover:not(.server-row-active):not(.server-row-selected) {
+  background: rgba(255,255,255,.03) !important;
+  border-color: var(--border-mid) !important;
+}
+
 /* ─── Inputs ─────────────────────────────────────── */
 .input-hacker {
   font-family: 'JetBrains Mono', monospace;
