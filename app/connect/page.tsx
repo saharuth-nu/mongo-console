@@ -438,11 +438,24 @@ export default function ConnectPage() {
               <button
                 className="btn"
                 style={{
-                  border: '1px dashed var(--border)', borderRadius: 'var(--radius)',
+                  border: `1px dashed ${showManual ? 'var(--green)' : 'var(--border)'}`,
+                  borderRadius: 'var(--radius)',
                   padding: '8px', justifyContent: 'center', fontSize: '0.72rem',
-                  color: 'var(--text-dim)', marginTop: 2,
+                  color: showManual ? 'var(--green)' : 'var(--text-dim)', marginTop: 2,
                   background: showManual ? 'rgba(0,255,65,.04)' : 'transparent',
-                  borderColor: showManual ? 'var(--border-mid)' : 'var(--border)',
+                  transition: 'background .15s, border-color .15s, color .15s',
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget
+                  el.style.background = 'rgba(0,255,65,.07)'
+                  el.style.borderColor = 'var(--green)'
+                  el.style.color = 'var(--green)'
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget
+                  el.style.background = showManual ? 'rgba(0,255,65,.04)' : 'transparent'
+                  el.style.borderColor = showManual ? 'var(--green)' : 'var(--border)'
+                  el.style.color = showManual ? 'var(--green)' : 'var(--text-dim)'
                 }}
                 onClick={() => { setShowManual(m => !m); setSelectedIdx(null) }}
               >
