@@ -1,6 +1,6 @@
 'use client'
 import { apiUrl } from '@/lib/api'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Terminal from './Terminal'
 import { useAppStore } from '@/lib/store'
 import { ChevronRight, ChevronDown, Circle, Database, X } from 'lucide-react'
@@ -61,6 +61,33 @@ export default function BrowserView() {
   )
   const [docs, setDocs] = useState<Record<string, unknown>[]>([])
   const [total, setTotal] = useState(0)
+  const [sidebarWidth, setSidebarWidth] = useState(224)
+  const isResizing = useRef(false)
+  const startX = useRef(0)
+  const startWidth = useRef(0)
+
+  const onResizeStart = useCallback((e: React.MouseEvent) => {
+    isResizing.current = true
+    startX.current = e.clientX
+    startWidth.current = sidebarWidth
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    function onMove(ev: MouseEvent) {
+      if (!isResizing.current) return
+      const delta = ev.clientX - startX.current
+      setSidebarWidth(Math.min(480, Math.max(140, startWidth.current + delta)))
+    }
+    function onUp() {
+      isResizing.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [sidebarWidth])
   const [page, setPage] = useState(1)
   const [selectedDoc, setSelectedDoc] = useState<Record<string, unknown> | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -162,13 +189,28 @@ export default function BrowserView() {
       {/* Sidebar — fixed overlay on mobile, static on desktop */}
       <div
         className={`
-          fixed md:static top-0 left-0 h-full z-50 w-56 flex-shrink-0
+          fixed md:static top-0 left-0 h-full z-50 flex-shrink-0
           transition-transform duration-200
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
-        style={{ borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+        style={{ width: sidebarWidth, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}
       >
-        {sidebar}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRight: '1px solid var(--border)' }}>
+          {sidebar}
+        </div>
+        {/* Resize handle — desktop only */}
+        <div
+          className="hidden md:flex"
+          onMouseDown={onResizeStart}
+          style={{
+            width: 5, flexShrink: 0, cursor: 'col-resize',
+            background: 'transparent',
+            transition: 'background .15s',
+            zIndex: 10,
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,255,65,.3)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
+        />
       </div>
 
       {/* Main content */}
