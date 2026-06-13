@@ -1,7 +1,7 @@
 'use client'
 import { apiUrl } from '@/lib/api'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { LayoutDashboard, Database, Terminal, AlertTriangle, Settings, Menu, X } from 'lucide-react'
 
@@ -16,6 +16,7 @@ interface EnvServer { label: string; baseUri: string }
 
 export default function Navbar() {
   const path = usePathname()
+  const router = useRouter()
   const [time, setTime] = useState('')
   const [connected, setConnected] = useState<boolean | null>(null)
   const [activeLabel, setActiveLabel] = useState<string | null>(null)
@@ -33,6 +34,11 @@ export default function Navbar() {
       .then(r => r.json())
       .then(d => {
         setConnected(d.connected)
+        // Redirect to connect page if no connection and not already there
+        if (!d.connected && path !== '/connect') {
+          router.push('/connect')
+          return
+        }
         // Resolve active server label
         const sid: string | null = d.activeServerId ?? null
         if (!sid) { setActiveLabel(null); return }
@@ -45,7 +51,10 @@ export default function Navbar() {
           setActiveLabel(sid)
         }
       })
-      .catch(() => setConnected(false))
+      .catch(() => {
+        setConnected(false)
+        if (path !== '/connect') router.push('/connect')
+      })
   }, [path])
 
   useEffect(() => { setMenuOpen(false) }, [path])
