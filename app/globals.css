@@ -158,6 +158,12 @@ body::before {
   white-space: nowrap;
 }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn:not(.btn-green):not(.btn-cyan):not(.btn-red):not(:disabled):hover {
+  background: rgba(255,255,255,.06);
+  border-color: var(--border-mid);
+  color: var(--text-primary);
+}
+.btn:not(:disabled):active { transform: scale(.97); }
 
 .btn-green {
   border-color: var(--green);
@@ -181,6 +187,7 @@ body::before {
   box-shadow: 0 0 14px rgba(0,212,255,.25);
   text-shadow: 0 0 8px var(--cyan);
 }
+.btn-cyan:active:not(:disabled) { transform: scale(.97); }
 
 .btn-red {
   border-color: var(--red);
@@ -190,7 +197,9 @@ body::before {
 .btn-red:hover:not(:disabled) {
   background: rgba(255,0,60,.12);
   box-shadow: 0 0 14px rgba(255,0,60,.25);
+  text-shadow: 0 0 8px var(--red);
 }
+.btn-red:active:not(:disabled) { transform: scale(.97); }
 
 /* ─── Icon action buttons (DocCard) ──────────────── */
 .icon-btn {
