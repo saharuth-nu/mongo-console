@@ -192,6 +192,28 @@ body::before {
   box-shadow: 0 0 14px rgba(255,0,60,.25);
 }
 
+/* ─── Icon action buttons (DocCard) ──────────────── */
+.icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  transition: color .15s, background .15s, transform .1s;
+}
+.icon-btn:hover { color: var(--text-primary); background: rgba(255,255,255,.06); }
+.icon-btn:active { transform: scale(.9); }
+.icon-btn.copy:hover  { color: var(--green);  background: rgba(0,255,65,.1); }
+.icon-btn.edit:hover  { color: var(--cyan);   background: rgba(0,212,255,.1); }
+.icon-btn.delete:hover { color: var(--red);   background: rgba(255,0,60,.1); }
+.icon-btn.active-edit   { color: var(--cyan); }
+.icon-btn.active-delete { color: var(--red);  }
+.icon-btn.copied        { color: var(--green); }
+
 /* ─── Inputs ─────────────────────────────────────── */
 .input-hacker {
   font-family: 'JetBrains Mono', monospace;

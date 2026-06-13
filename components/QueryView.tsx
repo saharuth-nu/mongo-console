@@ -179,20 +179,20 @@ function DocCard({
           {preview}
         </span>
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', gap: 2, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
           <button title="Copy JSON" onClick={copyDoc}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: copied ? 'var(--green)' : 'var(--text-dim)', padding: '3px 5px', display: 'flex' }}>
+            className={`icon-btn copy${copied ? ' copied' : ''}`}>
             {copied ? <Check size={13} strokeWidth={2.5} /> : <Copy size={13} strokeWidth={1.75} />}
           </button>
           <button title="Edit" onClick={startEdit}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: mode === 'edit' ? 'var(--cyan)' : 'var(--text-dim)', padding: '3px 5px', display: 'flex' }}>
+            className={`icon-btn edit${mode === 'edit' ? ' active-edit' : ''}`}>
             <Pencil size={13} strokeWidth={1.75} />
           </button>
           <button title="Delete" onClick={() => setMode(m => m === 'confirm-delete' ? 'view' : 'confirm-delete')}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: mode === 'confirm-delete' ? 'var(--red)' : 'var(--text-dim)', padding: '3px 5px', display: 'flex' }}>
+            className={`icon-btn delete${mode === 'confirm-delete' ? ' active-delete' : ''}`}>
             <Trash2 size={13} strokeWidth={1.75} />
           </button>
-          <span style={{ color: 'var(--text-dim)', padding: '3px 2px', display: 'flex' }}>
+          <span className="icon-btn" style={{ cursor: 'default' }}>
             {expanded ? <ChevronDown size={13} strokeWidth={2} /> : <ChevronRight size={13} strokeWidth={2} />}
           </span>
         </div>
