@@ -85,7 +85,7 @@ export default function Dashboard() {
           Enter Credentials
         </button>
       ) : (
-        <a href="/connect" className="btn btn-green mt-2">Configure Connection</a>
+        <button className="btn btn-green mt-2" onClick={() => router.push('/connect')}>Configure Connection</button>
       )}
     </div>
   )
