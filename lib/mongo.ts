@@ -7,6 +7,8 @@ export interface ServerEntry {
   label: string
   /** Base URI (no credentials) */
   baseUri: string
+  /** True when the URI already contains embedded username:password */
+  hasCredentials: boolean
 }
 
 export interface ClientEntry {
@@ -38,18 +40,23 @@ export function getEnvServers(): ServerEntry[] {
   return raw.split(',').map((entry, i) => {
     const trimmed = entry.trim()
     const pipeIdx = trimmed.indexOf('|')
+    let label: string, baseUri: string
     if (pipeIdx > 0) {
-      const label = trimmed.slice(0, pipeIdx).trim()
-      const baseUri = trimmed.slice(pipeIdx + 1).trim()
-      return { label, baseUri }
+      label = trimmed.slice(0, pipeIdx).trim()
+      baseUri = trimmed.slice(pipeIdx + 1).trim()
+    } else {
+      baseUri = trimmed
+      try {
+        const url = new URL(trimmed)
+        label = `${url.hostname}:${url.port || 27017}`
+      } catch {
+        label = `Server ${i + 1}`
+      }
     }
-    // Auto-derive label from host:port
-    try {
-      const url = new URL(trimmed)
-      return { label: `${url.hostname}:${url.port || 27017}`, baseUri: trimmed }
-    } catch {
-      return { label: `Server ${i + 1}`, baseUri: trimmed }
-    }
+    const hasCredentials = (() => {
+      try { const u = new URL(baseUri); return Boolean(u.username) } catch { return false }
+    })()
+    return { label, baseUri, hasCredentials }
   }).filter(s => s.baseUri)
 }
 

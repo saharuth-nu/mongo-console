@@ -3,10 +3,12 @@ import { apiUrl } from '@/lib/api'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Terminal from '@/components/Terminal'
+import { Zap, ZapOff, LogOut } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface EnvServer { label: string; baseUri: string }
+interface EnvServer { label: string; baseUri: string; hasCredentials: boolean }
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -122,6 +124,8 @@ function CredForm({
   )
 }
 
+interface ESEnvServer { label: string; node: string; username?: string; password?: string; apiKey?: string }
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ConnectPage() {
@@ -147,6 +151,19 @@ export default function ConnectPage() {
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // ── Elasticsearch state ───────────────────────────────────────────────────
+  const [esConnected, setEsConnected] = useState(false)
+  const [esNode, setEsNode] = useState<string | null>(null)
+  const [esEnvServers, setEsEnvServers] = useState<ESEnvServer[]>([])
+  const [showEsManual, setShowEsManual] = useState(false)
+  const [esNodeInput, setEsNodeInput] = useState('http://localhost:9200')
+  const [esAuthMode, setEsAuthMode] = useState<'none' | 'basic' | 'apikey'>('none')
+  const [esUsername, setEsUsername] = useState('')
+  const [esPassword, setEsPassword] = useState('')
+  const [esApiKey, setEsApiKey] = useState('')
+  const [esLoading, setEsLoading] = useState(false)
+  const [esError, setEsError] = useState<string | null>(null)
+
   // ── Fetch server state on mount ───────────────────────────────────────────
   useEffect(() => {
     fetch(apiUrl('/api/connect')).then(r => r.json()).then(d => {
@@ -157,6 +174,12 @@ export default function ConnectPage() {
       // No env — show manual form automatically
       if (!d.hasEnv) setShowManual(true)
     })
+    fetch(apiUrl('/api/es/connect')).then(r => r.json()).then(d => {
+      setEsConnected(d.connected ?? false)
+      setEsNode(d.node ?? null)
+      setEsEnvServers(d.envServers ?? [])
+      if (!d.connected && (d.envServers ?? []).length === 0) setShowEsManual(true)
+    }).catch(() => {})
   }, [router])
 
   // ── Connect env server by index ───────────────────────────────────────────
@@ -251,23 +274,64 @@ export default function ConnectPage() {
   const isActive = (sid: string) => activeServerId === sid
   const isConnected = (sid: string) => connectedServers.includes(sid)
 
+  // ── ES connect ────────────────────────────────────────────────────────────
+  async function connectES(opts?: { node: string; username?: string; password?: string; apiKey?: string }) {
+    setEsLoading(true); setEsError(null)
+    try {
+      const body = opts ?? {
+        node: esNodeInput,
+        ...(esAuthMode === 'basic' ? { username: esUsername, password: esPassword } : {}),
+        ...(esAuthMode === 'apikey' ? { apiKey: esApiKey } : {}),
+      }
+      const res = await fetch(apiUrl('/api/es/connect'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error)
+      setEsConnected(true)
+      setEsNode(body.node)
+      setShowEsManual(false)
+    } catch (e: unknown) {
+      const msg = (e as Error).message
+      const isSecurity = msg.includes('security_exception') || msg.includes('missing authentication') || msg.includes('401') || msg.includes('Unauthorized')
+      if (isSecurity) {
+        setEsAuthMode('basic')
+        setShowEsManual(true)
+        setEsError('⚠ Cluster requires authentication — enter username & password below')
+      } else {
+        setEsError(msg)
+      }
+    } finally {
+      setEsLoading(false)
+    }
+  }
+
+  async function disconnectES() {
+    setEsLoading(true)
+    await fetch(apiUrl('/api/es/connect'), { method: 'DELETE' })
+    setEsConnected(false); setEsNode(null)
+    setEsLoading(false)
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg-primary)' }}>
+    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', background: 'var(--bg-primary)' }}>
       <div className="w-full max-w-lg fade-in">
 
         {/* Logo */}
         <div className="text-center mb-7">
           <pre className="inline-block text-left text-xs leading-tight select-none"
             style={{ color: 'var(--green)', textShadow: '0 0 10px rgba(0,255,65,.5)', fontSize: 'clamp(7px,1.4vw,11px)' }}
-          >{`███╗   ███╗ ██████╗ ███╗   ██╗ ██████╗  ██████╗
-████╗ ████║██╔═══██╗████╗  ██║██╔════╝ ██╔═══██╗
-██╔████╔██║██║   ██║██╔██╗ ██║██║  ███╗██║   ██║
-██║╚██╔╝██║██║   ██║██║╚██╗██║██║   ██║██║   ██║
-██║ ╚═╝ ██║╚██████╔╝██║ ╚████║╚██████╔╝╚██████╔╝
-╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝  ╚═════╝`}</pre>
+          >{` ██████╗ ██████╗      ██████╗ ██████╗ ███╗   ██╗███████╗ ██████╗ ██╗     ███████╗
+██╔══██╗██╔══██╗    ██╔════╝██╔═══██╗████╗  ██║██╔════╝██╔═══██╗██║     ██╔════╝
+██║  ██║██████╔╝    ██║     ██║   ██║██╔██╗ ██║███████╗██║   ██║██║     █████╗
+██║  ██║██╔══██╗    ██║     ██║   ██║██║╚██╗██║╚════██║██║   ██║██║     ██╔══╝
+██████╔╝██████╔╝    ╚██████╗╚██████╔╝██║ ╚████║███████║╚██████╔╝███████╗███████╗
+╚═════╝ ╚═════╝      ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚══════╝╚══════╝`}</pre>
           <p className="mt-2 text-xs tracking-[.2em]" style={{ color: 'var(--text-secondary)' }}>
-            SELECT CONNECTION
+            MONGODB &amp; ELASTICSEARCH — SELECT CONNECTION
           </p>
         </div>
 
@@ -355,6 +419,7 @@ export default function ConnectPage() {
                       onClick={() => {
                         if (active) return
                         if (connected) switchServer(sid)
+                        else if (srv.hasCredentials) connectEnvServer(idx, '', '')
                         else setSelectedIdx(selected ? null : idx)
                       }}
                     >
@@ -406,7 +471,7 @@ export default function ConnectPage() {
                             {loading === `disc_${sid}` ? '◌' : '⏻'}
                           </button>
                         )}
-                        {!connected && !active && (
+                        {!connected && !active && !srv.hasCredentials && (
                           <span style={{ fontSize: '0.75rem', color: selected ? 'var(--cyan)' : 'var(--text-dim)' }}>
                             {selected ? '▲' : '▼'}
                           </span>
@@ -414,8 +479,8 @@ export default function ConnectPage() {
                       </div>
                     </div>
 
-                    {/* Inline credential form — expands when selected */}
-                    {selected && !connected && (
+                    {/* Inline credential form — expands when selected (only if no embedded creds) */}
+                    {selected && !connected && !srv.hasCredentials && (
                       <div style={{
                         borderTop: '1px solid var(--border)',
                         padding: '12px 14px',
@@ -542,6 +607,146 @@ export default function ConnectPage() {
             </div>
           </Terminal>
         )}
+
+        {/* ── Elasticsearch section ──────────────────────────────────────── */}
+        <div style={{ marginTop: 20 }}>
+          <Terminal title="ELASTICSEARCH" accent="cyan">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+              {/* Connected banner */}
+              {esConnected && (
+                <div style={{
+                  padding: '9px 12px', borderRadius: 'var(--radius)',
+                  background: 'rgba(0,212,255,.06)', border: '1px solid rgba(0,212,255,.3)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <Zap size={13} style={{ color: 'var(--cyan)', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--cyan)', fontWeight: 700 }}>CONNECTED</span>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)', marginLeft: 8 }}>{esNode}</span>
+                  </div>
+                  <button className="btn btn-cyan" style={{ padding: '3px 10px', fontSize: '0.68rem' }}
+                    onClick={() => router.push('/es/dashboard')}>
+                    ▶ DASHBOARD
+                  </button>
+                  <button className="btn btn-red" style={{ padding: '3px 8px', fontSize: '0.68rem' }}
+                    onClick={disconnectES} disabled={esLoading} title="Disconnect Elasticsearch">
+                    {esLoading ? '◌' : <LogOut size={12} />}
+                  </button>
+                </div>
+              )}
+
+              {/* ENV servers */}
+              {esEnvServers.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  {esEnvServers.map((s, i) => (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '9px 12px', borderRadius: 'var(--radius)',
+                      border: '1px solid var(--border)', background: 'transparent',
+                      cursor: 'pointer', transition: 'background .15s, border-color .15s',
+                    }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,212,255,.05)'; (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(0,212,255,.3)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)' }}
+                      onClick={() => connectES({ node: s.node, username: s.username, password: s.password, apiKey: s.apiKey })}
+                    >
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--cyan)', flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {s.label}
+                          {(s.username || s.apiKey) && (
+                            <span style={{ fontSize: '0.6rem', padding: '1px 5px', borderRadius: 3, background: 'rgba(0,212,255,.12)', color: 'var(--cyan)', border: '1px solid rgba(0,212,255,.25)' }}>
+                              {s.apiKey ? 'API KEY' : s.username}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.node}</div>
+                      </div>
+                      <ZapOff size={13} style={{ color: 'var(--cyan)', flexShrink: 0 }} />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Manual toggle */}
+              {esEnvServers.length > 0 && (
+                <button className="btn" style={{
+                  border: `1px dashed ${showEsManual ? 'var(--cyan)' : 'var(--border)'}`,
+                  borderRadius: 'var(--radius)', padding: '7px', justifyContent: 'center',
+                  fontSize: '0.72rem', color: showEsManual ? 'var(--cyan)' : 'var(--text-dim)',
+                  background: showEsManual ? 'rgba(0,212,255,.04)' : 'transparent',
+                  transition: 'all .15s',
+                }}
+                  onClick={() => setShowEsManual(m => !m)}>
+                  {showEsManual ? '▲ HIDE MANUAL' : '+ MANUAL CONNECT'}
+                </button>
+              )}
+
+              {/* Manual form */}
+              {showEsManual && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <Label>Node URL</Label>
+                    <TextInput value={esNodeInput} onChange={setEsNodeInput} placeholder="http://localhost:9200" />
+                  </div>
+
+                  {/* Auth mode */}
+                  <div>
+                    <Label>Authentication</Label>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 5 }}>
+                      {(['none', 'basic', 'apikey'] as const).map(m => (
+                        <button key={m} onClick={() => setEsAuthMode(m)}
+                          className={`btn ${esAuthMode === m ? 'btn-cyan' : ''}`}
+                          style={{ fontSize: '0.68rem', padding: '3px 8px' }}>
+                          {m === 'none' ? 'NONE' : m === 'basic' ? 'BASIC AUTH' : 'API KEY'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {esAuthMode === 'basic' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                        <Label>Username</Label>
+                        <TextInput value={esUsername} onChange={setEsUsername} placeholder="elastic" />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                        <Label>Password</Label>
+                        <TextInput value={esPassword} onChange={setEsPassword} type="password" />
+                      </div>
+                    </div>
+                  )}
+
+                  {esAuthMode === 'apikey' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <Label>API Key</Label>
+                      <TextInput value={esApiKey} onChange={setEsApiKey} placeholder="base64-encoded API key" />
+                    </div>
+                  )}
+
+                  {esError && (
+                    <div style={{
+                      padding: '7px 10px', borderRadius: 'var(--radius)',
+                      background: 'rgba(255,0,60,.06)', border: '1px solid var(--red)',
+                      fontSize: '0.72rem', color: 'var(--red)',
+                    }}>✗ {esError}</div>
+                  )}
+
+                  <button className="btn btn-cyan w-full justify-center" style={{ padding: '9px', fontSize: '0.8rem' }}
+                    onClick={() => connectES()} disabled={esLoading || !esNodeInput}>
+                    {esLoading ? <><span>◌</span> CONNECTING...</> : <><Zap size={13} /> CONNECT</>}
+                  </button>
+                </div>
+              )}
+
+              {!esConnected && !showEsManual && esEnvServers.length === 0 && (
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textAlign: 'center', padding: '4px 0' }}>
+                  // no ELASTICSEARCH_URI env var set
+                </div>
+              )}
+            </div>
+          </Terminal>
+        </div>
 
         <p className="text-center mt-4 text-xs" style={{ color: 'var(--text-dim)' }}>
           // 🔒 passwords sent to server only — never stored in browser

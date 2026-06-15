@@ -3,8 +3,8 @@ import './globals.css'
 import Navbar from '@/components/Navbar'
 
 export const metadata: Metadata = {
-  title: 'MONGO_CONSOLE // SYSTEM MONITOR',
-  description: 'MongoDB monitoring dashboard',
+  title: 'DB_CONSOLE // DATABASE MONITOR',
+  description: 'MongoDB & Elasticsearch monitoring dashboard',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

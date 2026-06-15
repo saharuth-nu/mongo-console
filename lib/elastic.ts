@@ -11,28 +11,37 @@ let activeEntry: ESClientEntry | null = null
 export interface ESServerEntry {
   label: string
   node: string
+  username?: string
+  password?: string
+  apiKey?: string
 }
 
-export function getEnvESServers(): ESServerEntry[] {
-  const raw = process.env.ELASTICSEARCH_URI ?? ''
-  if (!raw.trim()) return []
-  return raw.split(',').map((entry, i) => {
-    const trimmed = entry.trim()
-    const pipeIdx = trimmed.indexOf('|')
-    if (pipeIdx > 0) {
-      return { label: trimmed.slice(0, pipeIdx).trim(), node: trimmed.slice(pipeIdx + 1).trim() }
+export function getEnvESServer(): ESServerEntry | null {
+  const node = process.env.ELASTICSEARCH_URI?.trim()
+  if (!node) return null
+  try {
+    const url = new URL(node)
+    const label = `${url.hostname}:${url.port || 9200}`
+    return {
+      label,
+      node,
+      username: process.env.ELASTICSEARCH_USERNAME?.trim() || undefined,
+      password: process.env.ELASTICSEARCH_PASSWORD?.trim() || undefined,
+      apiKey: process.env.ELASTICSEARCH_API_KEY?.trim() || undefined,
     }
-    try {
-      const url = new URL(trimmed)
-      return { label: `${url.hostname}:${url.port || 9200}`, node: trimmed }
-    } catch {
-      return { label: `ES Server ${i + 1}`, node: trimmed }
-    }
-  }).filter(s => s.node)
+  } catch {
+    return { label: node, node }
+  }
 }
 
 export function hasEnvES(): boolean {
   return Boolean(process.env.ELASTICSEARCH_URI?.trim())
+}
+
+// keep backward compat for places that expect array
+export function getEnvESServers(): ESServerEntry[] {
+  const s = getEnvESServer()
+  return s ? [s] : []
 }
 
 export async function connectES(opts: {

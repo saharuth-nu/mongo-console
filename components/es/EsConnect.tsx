@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Zap, ZapOff, LogOut } from 'lucide-react'
 
-interface EnvServer { label: string; node: string }
+interface EnvServer { label: string; node: string; username?: string; password?: string; apiKey?: string }
 
 export default function EsConnect() {
   const router = useRouter()
@@ -49,7 +49,14 @@ export default function EsConnect() {
       setStatus({ ok: true, msg: `Connected to ${body.node}` })
       setTimeout(() => router.push('/es/dashboard'), 1000)
     } catch (e: unknown) {
-      setStatus({ ok: false, msg: (e as Error).message })
+      const msg = (e as Error).message
+      const isSecurity = msg.includes('security_exception') || msg.includes('missing authentication') || msg.includes('401') || msg.includes('Unauthorized')
+      if (isSecurity) {
+        setAuthMode('basic')
+        setStatus({ ok: false, msg: '⚠ Cluster requires authentication — enter username & password' })
+      } else {
+        setStatus({ ok: false, msg: msg })
+      }
     } finally {
       setLoading(false)
     }
@@ -100,7 +107,7 @@ export default function EsConnect() {
           <div className="flex flex-col gap-1">
             {envServers.map((s, i) => (
               <button key={i} className="btn py-2 px-3 text-xs flex items-center gap-2 text-left"
-                onClick={() => connect({ node: s.node })} disabled={loading}>
+                onClick={() => connect({ node: s.node, username: s.username, password: s.password, apiKey: s.apiKey })} disabled={loading}>
                 <Zap size={12} style={{ color: 'var(--cyan)', flexShrink: 0 }} />
                 <span style={{ color: 'var(--cyan)' }}>{s.label}</span>
                 <span style={{ color: 'var(--text-dim)', marginLeft: 'auto' }}>{s.node}</span>

@@ -1,4 +1,2 @@
-import Dashboard from '@/components/Dashboard'
-export default function Home() {
-  return <Dashboard />
-}
+import Home from '@/components/Home'
+export default function HomePage() { return <Home /> }
