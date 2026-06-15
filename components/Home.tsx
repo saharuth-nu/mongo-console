@@ -129,17 +129,35 @@ export default function Home() {
   const healthColor: Record<string, string> = { green: 'var(--green)', yellow: 'var(--yellow)', red: 'var(--red)' }
   const esHealthColor = healthColor[es?.health ?? ''] ?? 'var(--text-dim)'
 
+  const mongoOn = mongo?.connected === true
+  const esOn = es?.connected === true
+  const bothOn = mongoOn && esOn
+  const noneOn = !mongoOn && !esOn
+
+  if (noneOn) {
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <ZapOff size={32} style={{ color: 'var(--border)' }} />
+        <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>No database connected</div>
+        <button className="btn-green text-xs py-2 px-5 flex items-center gap-2"
+          onClick={() => router.push('/connect')}>
+          <Settings size={13} /> CONNECT
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '.15em', color: 'var(--green)', margin: 0 }}>
-            DB_CONSOLE
+          <h1 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '.15em', color: mongoOn && !esOn ? 'var(--green)' : 'var(--cyan)', margin: 0 }}>
+            {mongoOn && !esOn ? 'MONGODB' : esOn && !mongoOn ? 'ELASTICSEARCH' : 'DB_CONSOLE'}
           </h1>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: 2 }}>
-            DATABASE MONITOR // {new Date().toISOString().replace('T', ' ').slice(0, 19)} UTC
+            {new Date().toISOString().replace('T', ' ').slice(0, 19)} UTC
           </div>
         </div>
         <button className="btn-green icon-btn" onClick={load} disabled={loading} title="Refresh">
@@ -147,11 +165,11 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Two-column layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      {/* Layout: 2-col if both, full-width if one */}
+      <div style={{ display: 'grid', gridTemplateColumns: bothOn ? '1fr 1fr' : '1fr', gap: 16 }}>
 
-        {/* ── MongoDB card ── */}
-        <div style={{
+        {/* ── MongoDB card — only when connected ── */}
+        {mongoOn && <div style={{
           background: 'var(--bg-panel)', border: '1px solid var(--border)',
           borderRadius: 6, overflow: 'hidden',
         }}>
@@ -206,10 +224,10 @@ export default function Home() {
               </div>
             )}
           </div>
-        </div>
+        </div>}
 
-        {/* ── Elasticsearch card ── */}
-        <div style={{
+        {/* ── Elasticsearch card — only when connected ── */}
+        {esOn && <div style={{
           background: 'var(--bg-panel)', border: '1px solid rgba(0,212,255,.2)',
           borderRadius: 6, overflow: 'hidden',
         }}>
@@ -276,7 +294,8 @@ export default function Home() {
               </div>
             )}
           </div>
-        </div>
+        </div>}
+
       </div>
     </div>
   )
