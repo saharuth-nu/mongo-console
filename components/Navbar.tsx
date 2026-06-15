@@ -1,5 +1,6 @@
 'use client'
 import { apiUrl } from '@/lib/api'
+import { useAppStore } from '@/lib/store'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -21,6 +22,7 @@ const NAV_ES = [
 export default function Navbar() {
   const path = usePathname()
   const router = useRouter()
+  const { activeDb, setActiveDb } = useAppStore()
   const [time, setTime] = useState('')
   const [mongoConnected, setMongoConnected] = useState<boolean | null>(null)
   const [esConnected, setEsConnected] = useState(false)
@@ -48,7 +50,12 @@ export default function Navbar() {
 
     fetch(apiUrl('/api/es/connect'))
       .then(r => r.json())
-      .then(d => setEsConnected(d.connected))
+      .then(d => {
+        setEsConnected(d.connected)
+        if (!d.connected && cleanPath.startsWith('/es') && cleanPath !== '/es/connect') {
+          router.push('/')
+        }
+      })
       .catch(() => setEsConnected(false))
   }, [path])
 
@@ -70,37 +77,47 @@ export default function Navbar() {
         {/* Desktop nav */}
         <div className="hidden md:flex items-center flex-1 mx-2" style={{ gap: 2 }}>
 
-          {/* MongoDB section */}
-          <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', letterSpacing: '.1em', padding: '0 6px', flexShrink: 0 }}>MDB</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {NAV_MONGO.map(({ href, label, Icon }) => (
-              <Link key={href} href={href}
-                className={`nav-link px-2 py-1.5 text-xs border-l-0 ${!isES && path === href ? 'active' : ''}`}
-                style={{ opacity: mongoConnected ? 1 : 0.45 }}>
-                <Icon size={12} strokeWidth={1.75} />
-                {label}
-              </Link>
-            ))}
-          </div>
+          {/* MongoDB nav — show when activeDb is mongo or null */}
+          {(activeDb === 'mongo' || activeDb === null) && mongoConnected && (
+            <>
+              <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', letterSpacing: '.1em', padding: '0 6px', flexShrink: 0 }}>MDB</span>
+              {NAV_MONGO.map(({ href, label, Icon }) => (
+                <Link key={href} href={href}
+                  className={`nav-link px-2 py-1.5 text-xs border-l-0 ${!isES && path === href ? 'active' : ''}`}>
+                  <Icon size={12} strokeWidth={1.75} />
+                  {label}
+                </Link>
+              ))}
+            </>
+          )}
 
-          {/* Divider */}
-          <span style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 6px', flexShrink: 0 }} />
+          {/* Divider — only when both shown */}
+          {activeDb === null && mongoConnected && esConnected && (
+            <span style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 6px', flexShrink: 0 }} />
+          )}
 
-          {/* Elasticsearch section */}
-          <span style={{ fontSize: '0.6rem', color: 'var(--cyan)', opacity: 0.7, letterSpacing: '.1em', padding: '0 6px', flexShrink: 0 }}>ES</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {NAV_ES.map(({ href, label, Icon }) => (
-              <Link key={href} href={href}
-                className={`nav-link px-2 py-1.5 text-xs border-l-0 ${path === href ? 'active' : ''}`}
-                style={{
-                  opacity: esConnected ? 1 : 0.45,
-                  '--nav-active-color': 'var(--cyan)',
-                } as React.CSSProperties}>
-                <Icon size={12} strokeWidth={1.75} />
-                {label}
-              </Link>
-            ))}
-          </div>
+          {/* Elasticsearch nav — show when activeDb is es or null */}
+          {(activeDb === 'es' || activeDb === null) && esConnected && (
+            <>
+              <span style={{ fontSize: '0.6rem', color: 'var(--cyan)', opacity: 0.7, letterSpacing: '.1em', padding: '0 6px', flexShrink: 0 }}>ES</span>
+              {NAV_ES.map(({ href, label, Icon }) => (
+                <Link key={href} href={href}
+                  className={`nav-link px-2 py-1.5 text-xs border-l-0 ${path === href ? 'active' : ''}`}
+                  style={{ '--nav-active-color': 'var(--cyan)' } as React.CSSProperties}>
+                  <Icon size={12} strokeWidth={1.75} />
+                  {label}
+                </Link>
+              ))}
+            </>
+          )}
+
+          {/* Switch DB button — only when both connected and one is selected */}
+          {activeDb && mongoConnected && esConnected && (
+            <button className="btn text-xs py-1 px-2 ml-2" style={{ color: 'var(--text-dim)', flexShrink: 0 }}
+              onClick={() => setActiveDb(null)} title="Switch database">
+              ⇄
+            </button>
+          )}
         </div>
 
         {/* Right side */}
@@ -141,31 +158,43 @@ export default function Navbar() {
       {/* Mobile dropdown */}
       {menuOpen && (
         <div className="md:hidden" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
-          {/* MongoDB */}
-          <div style={{ padding: '4px 16px', fontSize: '0.6rem', color: 'var(--text-dim)', letterSpacing: '.1em', borderBottom: '1px solid var(--border)' }}>
-            MONGODB {mongoConnected ? '● ONLINE' : '● OFFLINE'}
-          </div>
-          {NAV_MONGO.map(({ href, label, Icon }) => (
-            <Link key={href} href={href}
-              className={`nav-link text-sm py-3 px-4 border-l-0 border-b flex items-center gap-2 ${!isES && path === href ? 'active' : ''}`}
-              style={{ borderBottomColor: 'var(--border)', opacity: mongoConnected ? 1 : 0.5 }}>
-              <Icon size={15} strokeWidth={1.75} style={{ flexShrink: 0 }} />
-              <span className="tracking-widest">{label}</span>
-            </Link>
-          ))}
-          {/* Elasticsearch */}
-          <div style={{ padding: '4px 16px', fontSize: '0.6rem', color: 'var(--cyan)', opacity: 0.8, letterSpacing: '.1em', borderBottom: '1px solid var(--border)', borderTop: '1px solid var(--border)', marginTop: 2 }}>
-            ELASTICSEARCH {esConnected ? '● ONLINE' : '● OFFLINE'}
-          </div>
-          {NAV_ES.map(({ href, label, Icon }) => (
-            <Link key={href} href={href}
-              className={`nav-link text-sm py-3 px-4 border-l-0 border-b flex items-center gap-2 ${path === href ? 'active' : ''}`}
-              style={{ borderBottomColor: 'var(--border)', color: 'var(--cyan)', opacity: esConnected ? 1 : 0.5 }}>
-              <Icon size={15} strokeWidth={1.75} style={{ color: 'var(--cyan)', flexShrink: 0 }} />
-              <span className="tracking-widest">{label}</span>
-            </Link>
-          ))}
-          <div className="px-4 py-2 text-xs flex items-center gap-2" style={{ color: 'var(--text-dim)', borderTop: '1px solid var(--border)' }}>
+          {(activeDb === 'mongo' || activeDb === null) && mongoConnected && (
+            <>
+              <div style={{ padding: '4px 16px', fontSize: '0.6rem', color: 'var(--text-dim)', letterSpacing: '.1em', borderBottom: '1px solid var(--border)' }}>
+                MONGODB ● ONLINE
+              </div>
+              {NAV_MONGO.map(({ href, label, Icon }) => (
+                <Link key={href} href={href}
+                  className={`nav-link text-sm py-3 px-4 border-l-0 border-b flex items-center gap-2 ${!isES && path === href ? 'active' : ''}`}
+                  style={{ borderBottomColor: 'var(--border)' }}>
+                  <Icon size={15} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+                  <span className="tracking-widest">{label}</span>
+                </Link>
+              ))}
+            </>
+          )}
+          {(activeDb === 'es' || activeDb === null) && esConnected && (
+            <>
+              <div style={{ padding: '4px 16px', fontSize: '0.6rem', color: 'var(--cyan)', opacity: 0.8, letterSpacing: '.1em', borderBottom: '1px solid var(--border)', borderTop: activeDb === null ? '1px solid var(--border)' : 'none' }}>
+                ELASTICSEARCH ● ONLINE
+              </div>
+              {NAV_ES.map(({ href, label, Icon }) => (
+                <Link key={href} href={href}
+                  className={`nav-link text-sm py-3 px-4 border-l-0 border-b flex items-center gap-2 ${path === href ? 'active' : ''}`}
+                  style={{ borderBottomColor: 'var(--border)', color: 'var(--cyan)' }}>
+                  <Icon size={15} strokeWidth={1.75} style={{ color: 'var(--cyan)', flexShrink: 0 }} />
+                  <span className="tracking-widest">{label}</span>
+                </Link>
+              ))}
+            </>
+          )}
+          {activeDb && mongoConnected && esConnected && (
+            <button className="w-full text-xs py-2 px-4 text-left" style={{ background: 'transparent', border: 'none', borderTop: '1px solid var(--border)', color: 'var(--text-dim)', cursor: 'pointer', fontFamily: 'inherit' }}
+              onClick={() => { setActiveDb(null); setMenuOpen(false) }}>
+              ⇄ SWITCH DATABASE
+            </button>
+          )}
+          <div className="px-4 py-2 text-xs flex items-center" style={{ color: 'var(--text-dim)', borderTop: '1px solid var(--border)' }}>
             <span className="ml-auto">{time}</span>
           </div>
         </div>

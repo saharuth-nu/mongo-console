@@ -1,6 +1,10 @@
 import { create } from 'zustand'
 
 interface AppState {
+  // Active DB mode
+  activeDb: 'mongo' | 'es' | null
+  setActiveDb: (v: 'mongo' | 'es' | null) => void
+
   // Connection
   connected: boolean
   setConnected: (v: boolean) => void
@@ -47,6 +51,10 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
+  // Active DB mode
+  activeDb: null,
+  setActiveDb: (v) => set({ activeDb: v }),
+
   // Connection
   connected: false,
   setConnected: (v) => set({ connected: v }),
