@@ -20,6 +20,27 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Elasticsearch (optional — comment out if using external ES) ──────────────
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - mongo-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 6
+
   # ── Mongo Console (Next.js app) ───────────────────────────────────────────────
   mongo-console:
     build:
@@ -43,6 +64,8 @@ services:
       #   Atlas:               Atlas|mongodb+srv://cluster.mongodb.net/?authSource=admin
       MONGODB_URI: >-
         Local|mongodb://mongo:27017/?authSource=admin
+      # Elasticsearch node(s) — leave blank to connect via the ES Connect UI
+      # ELASTICSEARCH_URI: Local|http://elasticsearch:9200
     networks:
       - mongo-net
     depends_on:
@@ -58,3 +81,4 @@ networks:
 
 volumes:
   mongo_data:
+  es_data:

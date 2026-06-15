@@ -28,6 +28,22 @@ interface AppState {
   // Slow queries
   slowDb: string
   setSlowDb: (v: string) => void
+
+  // Elasticsearch
+  esConnected: boolean
+  esNode: string | null
+  esIndex: string
+  esBrowserIndex: string
+  esQuery: string
+  esResults: unknown[] | null
+  esError: string | null
+  esElapsed: number | null
+  esTotal: number | null
+  setEsConnected: (v: boolean, node?: string | null) => void
+  setEsIndex: (v: string) => void
+  setEsBrowserIndex: (v: string) => void
+  setEsQuery: (v: string) => void
+  setEsResults: (results: unknown[] | null, total: number | null, elapsed: number | null, error: string | null) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -58,4 +74,20 @@ export const useAppStore = create<AppState>((set) => ({
   // Slow queries
   slowDb: '',
   setSlowDb: (v) => set({ slowDb: v }),
+
+  // Elasticsearch
+  esConnected: false,
+  esNode: null,
+  esIndex: '',
+  esBrowserIndex: '',
+  esQuery: '{\n  "query": {\n    "match_all": {}\n  }\n}',
+  esResults: null,
+  esError: null,
+  esElapsed: null,
+  esTotal: null,
+  setEsConnected: (v, node = null) => set({ esConnected: v, esNode: node ?? null }),
+  setEsIndex: (v) => set({ esIndex: v }),
+  setEsBrowserIndex: (v) => set({ esBrowserIndex: v }),
+  setEsQuery: (v) => set({ esQuery: v }),
+  setEsResults: (results, total, elapsed, error) => set({ esResults: results, esTotal: total, esElapsed: elapsed, esError: error }),
 }))

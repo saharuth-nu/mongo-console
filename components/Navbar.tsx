@@ -3,13 +3,19 @@ import { apiUrl } from '@/lib/api'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, Database, Terminal, AlertTriangle, Settings, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Database, Terminal, AlertTriangle, Settings, Menu, X, Search, Layers } from 'lucide-react'
 
-const NAV = [
+const NAV_MONGO = [
   { href: '/',        label: 'DASHBOARD',    Icon: LayoutDashboard },
   { href: '/browser', label: 'DB BROWSER',   Icon: Database },
   { href: '/query',   label: 'QUERY EXEC',   Icon: Terminal },
   { href: '/slow',    label: 'SLOW QUERIES', Icon: AlertTriangle },
+]
+
+const NAV_ES = [
+  { href: '/es/dashboard', label: 'ES CLUSTER',  Icon: LayoutDashboard },
+  { href: '/es/indices',   label: 'ES INDICES',  Icon: Layers },
+  { href: '/es/query',     label: 'ES QUERY',    Icon: Search },
 ]
 
 interface EnvServer { label: string; baseUri: string }
@@ -21,6 +27,8 @@ export default function Navbar() {
   const [connected, setConnected] = useState<boolean | null>(null)
   const [activeLabel, setActiveLabel] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [esConnected, setEsConnected] = useState(false)
+  const [esNode, setEsNode] = useState<string | null>(null)
 
   useEffect(() => {
     const tick = () => setTime(new Date().toISOString().replace('T', ' ').slice(0, 19))
@@ -57,6 +65,11 @@ export default function Navbar() {
         const cleanPath = path.replace(/\/$/, '') || '/'
         if (cleanPath !== '/' && cleanPath !== '/connect') router.push('/')
       })
+
+    fetch(apiUrl('/api/es/connect'))
+      .then(r => r.json())
+      .then(d => { setEsConnected(d.connected); setEsNode(d.node ?? null) })
+      .catch(() => { setEsConnected(false) })
   }, [path])
 
   useEffect(() => { setMenuOpen(false) }, [path])
@@ -76,13 +89,26 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-0.5 flex-1 mx-3">
-          {NAV.map(({ href, label, Icon }) => (
+          {NAV_MONGO.map(({ href, label, Icon }) => (
             <Link key={href} href={href}
               className={`nav-link px-3 py-1.5 text-xs border-l-0 ${path === href ? 'active' : ''}`}>
               <Icon size={13} strokeWidth={1.75} />
               [{label}]
             </Link>
           ))}
+          {/* ES divider */}
+          <span style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 4px', flexShrink: 0 }} />
+          {NAV_ES.map(({ href, label, Icon }) => (
+            <Link key={href} href={href}
+              className={`nav-link px-3 py-1.5 text-xs border-l-0 ${path === href ? 'active' : ''}`}
+              style={{ color: esConnected ? undefined : 'var(--text-dim)', opacity: esConnected ? 1 : 0.6 }}>
+              <Icon size={13} strokeWidth={1.75} />
+              [{label}]
+            </Link>
+          ))}
+          <Link href="/es/connect" className={`nav-link px-2 py-1.5 text-xs border-l-0 ${path === '/es/connect' ? 'active' : ''}`} title="ES Connection">
+            <Settings size={13} strokeWidth={1.75} />
+          </Link>
         </div>
 
         {/* Right side */}
@@ -133,7 +159,7 @@ export default function Navbar() {
       {/* Mobile dropdown */}
       {menuOpen && (
         <div className="md:hidden" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
-          {NAV.map(({ href, label, Icon }) => (
+          {NAV_MONGO.map(({ href, label, Icon }) => (
             <Link key={href} href={href}
               className={`nav-link text-sm py-3 px-4 border-l-0 border-b flex items-center gap-2 ${path === href ? 'active' : ''}`}
               style={{ borderBottomColor: 'var(--border)' }}>
@@ -141,6 +167,23 @@ export default function Navbar() {
               <span className="tracking-widest">[{label}]</span>
             </Link>
           ))}
+          <div style={{ padding: '4px 16px', fontSize: '0.65rem', color: 'var(--cyan)', letterSpacing: '.08em', borderBottom: '1px solid var(--border)', borderBottomColor: 'var(--border)' }}>
+            ─── ELASTICSEARCH {esConnected ? `• ${esNode}` : '• OFFLINE'} ───
+          </div>
+          {NAV_ES.map(({ href, label, Icon }) => (
+            <Link key={href} href={href}
+              className={`nav-link text-sm py-3 px-4 border-l-0 border-b flex items-center gap-2 ${path === href ? 'active' : ''}`}
+              style={{ borderBottomColor: 'var(--border)', color: 'var(--cyan)' }}>
+              <Icon size={16} strokeWidth={1.75} style={{ color: 'var(--cyan)', flexShrink: 0 }} />
+              <span className="tracking-widest">[{label}]</span>
+            </Link>
+          ))}
+          <Link href="/es/connect"
+            className={`nav-link text-sm py-3 px-4 border-l-0 border-b flex items-center gap-2 ${path === '/es/connect' ? 'active' : ''}`}
+            style={{ borderBottomColor: 'var(--border)', color: 'var(--cyan)' }}>
+            <Settings size={16} strokeWidth={1.75} style={{ color: 'var(--cyan)', flexShrink: 0 }} />
+            <span className="tracking-widest">[ES CONNECT]</span>
+          </Link>
           <div className="px-4 py-2 text-xs flex items-center gap-2" style={{ color: 'var(--text-dim)' }}>
             <span className={`status-dot ${statusClass}`} />
             <span style={{ color: statusColor }}>
